@@ -40,3 +40,5 @@ t/scalar/set_set.t
 t/scalar/symmdiff.t
 t/scalar/union.t
 t/scalar/unique.t
+
+t/ingy/arrayref.t

@@ -83,3 +83,6 @@ Revision history for Perl extension Set::Object.
 1.09 26 Mar 2005
 	- added 'bool' overload operator to Set::Object.  For
 	  backwards compatibility, always returns true.
+
+1.10  2 Apr 2005
+	- added 'set()' constructor and use-as-array-ref interface

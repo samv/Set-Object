@@ -6,12 +6,13 @@ Set::Object - set of objects and strings
 =head1 SYNOPSIS
 
   use Set::Object;
-  $set = Set::Object->new();
+
+  my $set = set();            # or Set::Object->new()
 
   $set->insert(@thingies);
   $set->remove(@thingies);
 
-  @items = $set->elements;
+  @items = @$set;             # or $set->members;
 
   $union = $set1 + $set2;
   $intersection = $set1 * $set2;
@@ -331,7 +332,8 @@ On my computer the results are:
 
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
-Crack-fueled enhancements courtesy of Sam Vilain, <samv@cpan.org>
+Set::Scalar compatibility, XS debugging and other maintainership
+courtesy of Sam Vilain, <samv@cpan.org>
 
 =head1 LICENCE
 
@@ -365,7 +367,7 @@ require AutoLoader;
 @EXPORT = qw(set);
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key );
-$VERSION = '1.09_01';
+$VERSION = '1.10';
 
 bootstrap Set::Object $VERSION;
 
