@@ -6,6 +6,8 @@ require 't/Person.pm';
 package Person;
 use Test::More tests => 7;
 
+Set::Object->new->includes( $homer );
+
 populate();
 
 $simpsons = Set::Object->new( $homer, $marge, $bart, $lisa, $maggie );

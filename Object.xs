@@ -271,6 +271,9 @@ remove(self, ...)
       BUCKET* bucket;
       int init_elems = s->elems;
 
+      if (s->buckets == 0)
+	 goto remove_out;
+
       for (item = 1; item < items; ++item)
       {
          SV* el = ST(item);
@@ -296,8 +299,8 @@ remove(self, ...)
 			   break;
             }
          }
-	  }
-
+      }
+remove_out:
       XSRETURN_IV(init_elems - s->elems);
 
 int

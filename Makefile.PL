@@ -4,6 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'	=> 'Set::Object',
     'VERSION_FROM' => 'Object.pm', # finds $VERSION
+    'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
     'LIBS'	=> [''],   # e.g., '-lm' 
     'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
     'INC'	=> '',     # e.g., '-I/usr/include/other' 
