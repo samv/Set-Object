@@ -1,15 +1,15 @@
-use Set::Object;
-
 require 't/object/Person.pm';
 package Person;
+
+use Set::Object;
 
 populate();
 
 use vars qw( $homer $marge $bart $lisa $maggie );
 
-$simpsons = Set::Object->new( $homer, $marge, $bart, $lisa, $maggie );
-$parents = Set::Object->new( $homer, $marge );
-$empty = Set::Object->new();
+$simpsons = set( $homer, $marge, $bart, $lisa, $maggie );
+$parents = set( $homer, $marge );
+$empty = set();
 
 print "1..14\n";
 
