@@ -242,7 +242,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key );
-$VERSION = '1.06';
+$VERSION = '1.07';
 
 bootstrap Set::Object $VERSION;
 
@@ -315,6 +315,8 @@ sub difference
    croak("Tried to find difference between Set::Object & "
 	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
 
+   #{ grep { !$s2->includes($_) } $s1->members; }
+   #Set::Object->new( grep { !$s2->includes($_) } $s1->members );
    Set::Object->new( grep { !$s2->includes($_) } $s1->members );
 }
 

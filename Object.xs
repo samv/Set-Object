@@ -416,7 +416,8 @@ members(self)
 				  sv_bless(el, SvSTASH(*el_iter));
 				}
 				sv_2mortal(el);
-               	PUSHs(el);
+				//XPUSHs(el);
+				PUSHs(el);
 			}
       }
 
