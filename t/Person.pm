@@ -5,7 +5,8 @@ sub new
 {
    ++$n;
    my $type = shift;
-   bless { @_ }, $type;
+   my $self = bless { @_ }, $type;
+   return $self;
 }
 
 sub DESTROY
