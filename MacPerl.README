@@ -1,0 +1,37 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+
+Monday, July 20, 1998
+
+This is the Set::Object-0.002 module with shared libraries compiled for 
+MacPerl.  Shared libraries run only on PPC and CFM68K versions, not 
+non-CFM 68K versions.  For that, install the NOXSUB version also 
+contained in this archive.
+
+This was compiled with MPW and CodeWarrior.  Passed all tests.
+I have no 68K machine (even my Newton is RISC :) so I can't test
+the CFM68K version.  Let me know any problems.
+
+Decompress macblib.sit.hqx and install the three files in "macblib".
+Installing into your site_perl directory is best:
+
+    {MACPERL}site_perl:Set:Object.pm
+    {MACPERL}site_perl:MacCFM68K:auto:Set:Object:Object
+    {MACPERL}site_perl:MacPPC:auto:Set:Object:Object
+
+Also read README.
+
+
+-----BEGIN PGP SIGNATURE-----
+Version: PGPfreeware 5.0 for non-commercial use <http://www.pgp.com>
+Charset: noconv
+
+iQCVAwUBNbOgDihcZja3bnKtAQFW7gP/ZYBOXdl1uk26BkITOD2W1C+K+n1JN6zR
+OrSEevNH5GMwIbFfk3QMIjC4NI8xBNvcKXqqVe/8WMw1J6gu+EdVRKFxyBaRHrL7
+40Gi5/JrlQ6U4oDtomo2Un/2yxArfuNu8D28CiFQDFZT2x1Si42iSPFFaNaAzcV7
+9ybRsPv/nHY=
+=Ae+h
+-----END PGP SIGNATURE-----
+
+-- 
+Chris Nandor          mailto:pudge@pobox.com         http://pudge.net/
+%PGPKey = ('B76E72AD', [1024, '0824090B CE73CA10  1FF77F13 8180B6B6'])
