@@ -68,9 +68,14 @@ void iset_insert_one(ISET* s, SV* rv)
 {
 	BUCKET** ppb;
 	I32 hash, index;
-	SV* el = SvRV(rv);
+	SV* el;
 
-	SvROK(rv);
+	if (!SvROK(rv))
+	{
+	  Perl_croak(aTHX_ "Tried to insert non-reference in a Set::Object");
+	};
+
+	el = SvRV(rv);
 
 	if (!s->buckets)
 	{
@@ -320,8 +325,12 @@ rvrc(self)
    SV* self;
 
    CODE:
-
-      RETVAL = SvREFCNT(SvRV(self));
+   
+   if (SvROK(self)) {
+     RETVAL = SvREFCNT(SvRV(self));
+   } else {
+     XSRETURN_UNDEF;
+   }
 
    OUTPUT: RETVAL
 
@@ -339,7 +348,12 @@ includes(self, ...)
       for (item = 1; item < items; ++item)
       {
          SV* el = ST(item);
-         SV* rv = SvRV(el);
+         SV* rv;
+
+	 if (!SvROK(el))
+	   XSRETURN_NO;
+
+	 rv = SvRV(el);
 
          if (!s->buckets)
             XSRETURN_NO;
@@ -395,7 +409,9 @@ members(self)
             if (*el_iter)
 			{
 				SV* el = newRV(*el_iter);
-				sv_bless(el, SvSTASH(*el_iter));
+				if (SvOBJECT(*el_iter)) {
+				  sv_bless(el, SvSTASH(*el_iter));
+				}
 				sv_2mortal(el);
                	PUSHs(el);
 			}
@@ -420,5 +436,245 @@ DESTROY(self)
       iset_clear(s);
       Safefree(s);
       
+   /* Here are some functions from Scalar::Util; they are so simple,
+      that it isn't worth making a dependancy on that module. */
+
+int
+is_int(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  SvGETMAGIC(sv);
+  if ( !SvIOKp(sv) )
+     XSRETURN_UNDEF;
+
+  RETVAL = 1;
+OUTPUT:
+  RETVAL
+
+int
+is_string(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  SvGETMAGIC(sv);
+  if ( !SvPOKp(sv) )
+     XSRETURN_UNDEF;
+
+  RETVAL = 1;
+OUTPUT:
+  RETVAL
+
+int
+is_double(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  SvGETMAGIC(sv);
+  if ( !SvNOKp(sv) )
+     XSRETURN_UNDEF;
+
+  RETVAL = 1;
+OUTPUT:
+  RETVAL
 
 
+char *
+blessed(sv)
+    SV * sv
+PROTOTYPE: $
+CODE:
+{
+    if (SvMAGICAL(sv))
+	mg_get(sv);
+    if(!sv_isobject(sv)) {
+	XSRETURN_UNDEF;
+    }
+    RETVAL = sv_reftype(SvRV(sv),TRUE);
+}
+OUTPUT:
+    RETVAL
+
+char *
+reftype(sv)
+    SV * sv
+PROTOTYPE: $
+CODE:
+{
+    if (SvMAGICAL(sv))
+	mg_get(sv);
+    if(!SvROK(sv)) {
+	XSRETURN_UNDEF;
+    }
+    RETVAL = sv_reftype(SvRV(sv),FALSE);
+}
+OUTPUT:
+    RETVAL
+
+UV
+refaddr(sv)
+    SV * sv
+PROTOTYPE: $
+CODE:
+{
+    if(SvROK(sv)) {
+      // Don't return undef if not a valid ref - return 0 instead
+      // (less "Use of uninitialised value..." messages)
+
+      // XSRETURN_UNDEF;
+	RETVAL = PTR2UV(SvRV(sv));
+    }
+}
+OUTPUT:
+    RETVAL
+
+
+int
+_ish_int(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  double dutch;
+  int innit;
+  STRLEN lp;  // world famous in NZ
+  SV * MH;
+  // This function returns the integer value of a passed scalar, as
+  // long as the scalar can reasonably considered to already be a
+  // representation of an integer.  This means if you want strings to
+  // be interpreted as integers, you're going to have to add 0 to
+  // them.
+
+  if (SvMAGICAL(sv)) {
+    // probably a tied scalar
+    //mg_get(sv);
+    Perl_croak(aTHX_ "Tied variables not supported");
+  }
+
+  if (SvAMAGIC(sv)) {
+    // an overloaded variable.  need to actually call a function to
+    // get its value.
+    Perl_croak(aTHX_ "Overloaded variables not supported");
+  }
+
+  if (SvNIOKp(sv)) {
+    // NOK - the scalar is a double
+
+    if (SvPOKp(sv)) {
+      // POK - the scalar is also a string.
+
+      // we have to be careful; a scalar "2am" or, even worse, "2e6"
+      // may satisfy this condition if it has been evaluated in
+      // numeric context.  Remember, we are testing that the value
+      // could already be considered an _integer_, and AFAIC 2e6 and
+      // 2.0 are floats, end of story.
+
+      // So, we stringify the numeric part of the passed SV, turn off
+      // the NOK bit on the scalar, so as to perform a string
+      // comparison against the passed in value.  If it is not the
+      // same, then we almost certainly weren't given an integer.
+
+      if (SvIOKp(sv)) {
+	MH = newSViv(SvIV(sv));
+      } else if (SvNOKp(sv)) {
+	MH = newSVnv(SvNV(sv));
+      }
+      sv_2pv(MH, &lp);
+      SvPOK_only(MH);
+
+      if (sv_cmp(MH, sv) != 0) {
+	XSRETURN_UNDEF;
+      }
+    }
+
+    if (SvNOKp(sv)) {
+      // How annoying - it's a double
+      dutch = SvNV(sv);
+      if (SvIOKp(sv)) {
+	innit = SvIV(sv);
+      } else {
+	innit = (int)dutch;
+      }
+      if (dutch - innit < (0.000000001)) {
+	RETVAL = innit;
+      } else {
+	XSRETURN_UNDEF;
+      }
+    } else if (SvIOKp(sv)) {
+      RETVAL = SvIV(sv);
+    }
+  } else {
+    XSRETURN_UNDEF;
+  }
+OUTPUT:
+  RETVAL
+
+int
+is_overloaded(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  SvGETMAGIC(sv);
+  if ( !SvAMAGIC(sv) )
+     XSRETURN_UNDEF;
+  RETVAL = 1;
+OUTPUT:
+  RETVAL
+
+int
+is_object(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  SvGETMAGIC(sv);
+  if ( !SvOBJECT(sv) )
+     XSRETURN_UNDEF;
+  RETVAL = 1;
+OUTPUT:
+  RETVAL
+
+void
+_STORABLE_thaw(obj, cloning, serialized, ...)
+   SV* obj;
+   SV* cloning;
+   SV* serialized;
+
+   PPCODE:
+
+   {
+	   SV* self;
+	   ISET* s;
+	   I32 item;
+	   SV* isv;
+	
+	   New(0, s, 1, ISET);
+	   s->elems = 0;
+	   s->bucket = 0;
+	   s->buckets = 0;
+
+	   if (!SvROK(obj)) {
+	     Perl_croak(aTHX_ "Set::Object::STORABLE_thaw passed a non-reference");
+	   }
+	   isv = SvRV(obj);
+	   //if (!SvIOKp(isv)) {
+	     //Perl_croak(aTHX_ "Storable sucks");
+	   //}
+	   SvIV_set(isv, (IV) s);
+	   SvIOK_on(isv);
+
+	   //sv_2mortal(isv);
+
+	   //self = newRV_inc(isv);
+	   //sv_2mortal(self);
+
+	   //sv_bless(self, gv_stashsv(pkg, FALSE));
+
+	   for (item = 3; item < items; ++item)
+	   {
+		   iset_insert_one(s, ST(item));
+	   }
+
+      IF_DEBUG(warn("set!\n"));
+
+      PUSHs(self);
+      XSRETURN(1);
+   }

@@ -1,25 +1,29 @@
+#  -*- perl -*-
+
 use Set::Object;
 
 require 't/Person.pm';
 package Person;
+use Test::More tests => 7;
 
 populate();
 
 $simpsons = Set::Object->new( $homer, $marge, $bart, $lisa, $maggie );
 
-print "1..5\n";
+ok( $simpsons->includes(), "Set::Object->includes()" );
 
-print 'not' unless $simpsons->includes();
-print "ok 1\n";
+ok( $simpsons->includes($bart), "Set::Object->includes(single)" );
 
-print 'not' unless $simpsons->includes($bart);
-print "ok 2\n";
+ok( $simpsons->includes($homer, $marge, $bart, $lisa, $maggie),
+    "Set::Object->includes(many)" );
 
-print 'not' unless $simpsons->includes($homer, $marge, $bart, $lisa, $maggie);
-print "ok 3\n";
+ok( !$simpsons->includes($burns), "!Set::Object->includes(non-member)");
 
-print 'not' if $simpsons->includes($burns);
-print "ok 4\n";
+ok( !$simpsons->includes($homer, $burns, $marge),
+    "!Set::Object->includes(members, non-member)");
 
-print 'not' if $simpsons->includes($homer, $burns, $marge);
-print "ok 5\n";
+ok( !$simpsons->includes(Set::Object->new()),
+    "!Set::Object->includes(Set::Object->new())");
+
+ok( !$simpsons->includes("bogon"),
+    "!Set::Object->includes('bogon')");

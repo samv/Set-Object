@@ -91,10 +91,68 @@ Also available as operator >=.
 Return C<true> if this C<Set::Object> is a proper superset of I<set>
 Also available as operator >.
 
+=head1 FUNCTIONS
+
+The following functions are defined by the Set::Object XS code for
+convenience; they are largely identical to the versions in the
+Scalar::Util module, but there are a couple that provide functions not
+catered to by that module.
+
+=over
+
+=item B<blessed>
+
+Returns a true value if the passed reference (RV) is blessed.  See
+also L<Acme::Holy>.
+
+=item B<reftype>
+
+A bit like the perl built-in C<ref> function, but returns the I<type>
+of reference; ie, if the reference is blessed then it returns what
+C<ref> would have if it were not blessed.  Useful for "seeing through"
+blessed references.
+
+=item B<refaddr>
+
+Returns the memory address of a scalar.  B<Warning>: this is I<not>
+guaranteed to be unique for scalars created in a program; memory might
+get re-used!
+
+=item B<is_int>, B<is_string>, B<is_double>
+
+A quick way of checking the three bits on scalars - IOK (is_int), NOK
+(is_double) and POK (is_string).  Note that the exact behaviour of
+when these bits get set is not defined by the perl API.
+
+This function returns the "p" versions of the macro (SvIOKp, etc); use
+with caution.
+
+=item B<is_overloaded>
+
+A quick way to check if an object has overload magic on it.
+
+=item B<ish_int>
+
+This function returns true, if the value it is passed looks like it
+I<already is> a representation of an I<integer>.  This is so that you
+can decide whether the value passed is a hash key or an array
+index... <devious grin>.
+
+=item B<is_key>
+
+This function returns true, if the value it is passed looks more like
+an I<index> to a collection than a I<value> of a collection.
+
+But wait, you say - Set::Object has no indices, one of the fundamental
+properties of a Set is that it is an I<unordered collection>.  Which
+means I<no indices>.  Stay tuned for the answer.
+
+=back
+
 =head1 INSTALLATION
 
-This module is partly written in C, so you'll need a C compiler to install it.
-Use the familiar sequence:
+This module is partly written in C, so you'll need a C compiler to
+install it.  Use the familiar sequence:
 
    perl Makefile.PL
    make
@@ -149,7 +207,7 @@ On my computer the results are:
 
 =head1 AUTHOR
 
-Jean-Louis Leroy, jll@skynet.be
+Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
 =head1 LICENCE
 
@@ -157,10 +215,13 @@ Copyright (c) 1998-1999, Jean-Louis Leroy. All Rights Reserved.
 This module is free software. It may be used, redistributed
 and/or modified under the terms of the Perl Artistic License
 
+Portions Copyright (c) 2003, Sam Vilain.  All Rights Reserved.
+This module is free software. It may be used, redistributed
+and/or modified under the terms of the Perl Artistic License
+
 =head1 SEE ALSO
 
-perl(1).
-overload.pm
+perl(1), perltie(1), overload.pm
 
 =cut
 
@@ -178,29 +239,29 @@ require AutoLoader;
 # Items to export into callers namespace by default. Note: do not export
 # names by default without a very good reason. Use EXPORT_OK instead.
 # Do not simply export all your public functions/methods/constants.
-@EXPORT = qw(
 
-);
-$VERSION = '1.03';
+@EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
+		 refaddr is_overloaded is_object is_key );
+$VERSION = '1.04';
 
 bootstrap Set::Object $VERSION;
 
 # Preloaded methods go here.
 
-sub _members
-{
-   my $self = shift;
-   map { $_ ? @$_ : () } @$self;
-}
-
 sub as_string
 {
-   'Set::Object(' . (join ' ', shift->members) . ')'
+    my $self = shift;
+    croak "Tried to use as_string on something other than a Set::Object"
+	unless (UNIVERSAL::isa($self, __PACKAGE__));
+
+   'Set::Object(' . (join ' ', $self->members) . ')'
 }
 
 sub equal
 {
    my ($s1, $s2) = @_;
+   return undef unless (UNIVERSAL::isa($s2, __PACKAGE__));
+
    $s1->size() == $s2->size() && $s1->includes($s2->members);
 }
 
@@ -211,25 +272,33 @@ sub not_equal
 
 sub union
 {
-   Set::Object->new( map { $_->members() } @_ )
+   Set::Object->new( map { $_->members() }
+		     grep { UNIVERSAL::isa($_, __PACKAGE__) }
+		     @_ )
 }
 
 sub op_union
 {
-   Set::Object->new( shift->members(), shift->members() )
+    croak("Tried to form union between Set::Object & "
+	  .(ref($_[1])||$_[1]))
+	unless UNIVERSAL::isa($_[1], __PACKAGE__);
+
+    Set::Object->new( shift->members(), shift->members() )
 }
 
 sub intersection
 {
    my $s = shift;
-   
    return Set::Object->new() unless $s;
 
    my @r = $s->members;
 
    while (@r && ($s = shift))
    {
-      @r = grep { $s->includes( $_ ) } @r;
+       croak("Tried to form intersection between Set::Object & "
+	     .(ref($s)||$s)) unless UNIVERSAL::isa($s, __PACKAGE__);
+
+       @r = grep { $s->includes( $_ ) } @r;
    }
 
    Set::Object->new( @r );
@@ -237,42 +306,56 @@ sub intersection
 
 sub op_intersection
 {
-   intersection(shift, shift);
+    goto &intersection;
 }
 
 sub difference
 {
    my ($s1, $s2, $r) = @_;
+   croak("Tried to find difference between Set::Object & "
+	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
+
    Set::Object->new( grep { !$s2->includes($_) } $s1->members );
 }
 
 sub symmetric_difference
 {
    my ($s1, $s2) = @_;
+   croak("Tried to find symmetric difference between Set::Object & "
+	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
+
    $s1->difference( $s2 )->union( $s2->difference( $s1 ) );
 }
 
 sub proper_subset
 {
    my ($s1, $s2) = @_;
+   croak("Tried to find proper subset of Set::Object & "
+	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
    $s1->size < $s2->size && $s1->subset( $s2 );
 }
 
 sub subset
 {
    my ($s1, $s2, $r) = @_;
+   croak("Tried to find subset of Set::Object & "
+	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
    $s2->includes($s1->members);
 }
 
 sub proper_superset
 {
    my ($s1, $s2, $r) = @_;
+   croak("Tried to find proper superset of Set::Object & "
+	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
    proper_subset( $s2, $s1 );
 }
 
 sub superset
 {
    my ($s1, $s2) = @_;
+   croak("Tried to find superset of Set::Object & "
+	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
    subset( $s2, $s1 );
 }
 
@@ -293,7 +376,77 @@ use overload
    ;
 
 # Autoload methods go after =cut, and are processed by the autosplit program.
+# This function is used to differentiate between an integer and a
+# string for use by the hash container types
 
+
+# This function is not from Scalar::Util; it is a DWIMy function to
+# decide whether the passed thingy could reasonably be considered
+# to be an array index, and if so returns the index
+sub ish_int {
+    my $i;
+    eval { $i = _ish_int($_[0]) };
+
+    if ($@) {
+	if ($@ =~ /overload/i) {
+	    if (my $sub = UNIVERSAL::can($_[0], "(0+")) {
+		return ish_int(&$sub($_[0]));
+	    } else {
+		return undef;
+	    }
+	} elsif ($@ =~ /tie/i) {
+	    my $x = $_[0];
+	    return ish_int($x);
+	}
+    } else {
+	return $i;
+    }
+}
+
+# returns true if the value looks like a key, not an object or a
+# collection
+sub is_key {
+    if (my $class = tied $_[0]) {
+	if ($class =~ m/^Tangram::/) { # hack for Tangram RefOnDemands
+	    return undef;
+	} else {
+	    my $x = $_[0];
+	    return is_key($x);
+	}
+    } elsif (is_overloaded($_[0])) {
+	# this is a bit of a hack - intrude into the overload internal
+	# space
+	if (my $sub = UNIVERSAL::can($_[0], "(0+")) {
+	    return is_key(&$sub($_[0]));
+	} elsif ($sub = UNIVERSAL::can($_[0], '(""')) {
+	    return is_key(&$sub($_[0]));
+	} elsif ($sub = UNIVERAL::can($_[0], '(nomethod')) {
+	    return is_key(&$sub($_[0]));
+	} else {
+	    return undef;
+	}
+    } elsif (is_int($_[0]) || is_string($_[0]) || is_double($_[0])) {
+	return 1;
+    } else {
+	return undef;
+    }
+}
+
+# interface so that Storable may still work
+sub STORABLE_freeze {
+    my $obj = shift;
+    my $am_cloning = shift;
+    return ("", $obj->members);
+}
+
+use Devel::Peek qw(Dump);
+
+sub STORABLE_thaw {
+    #print Dump $_ foreach (@_);
+
+    goto &_STORABLE_thaw;
+    #print "Got here\n";
+}
 1;
 
 __END__

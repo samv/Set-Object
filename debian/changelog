@@ -1,3 +1,14 @@
+libset-object-perl (1.04) unstable; urgency=low
+
+  * Check input elements to Set::Object are references
+  * Added resilience against using non-blessed thingies in the set
+  * More input marshalling
+  * More tests
+  * Serialisation & de-serialisation via Storable freeze/thaw now works
+  * Added utility functions for Class::Tangram (and Container::Object)
+
+ -- Sam Vilain <sam@vilain.net>  Fri, 23 May 2003 03:02:27 +1200
+
 libset-object-perl (1.03) unstable; urgency=low
 
   * Fixed overload bug
