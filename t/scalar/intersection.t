@@ -1,13 +1,13 @@
-use aliased 'Set::Object' => 'Set::Scalar';
 
+use Set::Object;
 print "1..20\n";
 
-my $a = Set::Scalar->new("a".."e");
-my $b = Set::Scalar->new("c".."g");
+my $a = Set::Object->new("a".."e");
+my $b = Set::Object->new("c".."g");
 
 my $d = $a->intersection($b);
 
-Set::Scalar->as_string_callback(sub { my $self = shift; "(".join(" ", sort $self->members).")" });
+Set::Object->as_string_callback(sub { my $self = shift; "(".join(" ", sort $self->members).")" });
 
 print "not " unless $d eq "(c d e)";
 print "ok 1\n";

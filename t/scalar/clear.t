@@ -1,8 +1,7 @@
-use aliased 'Set::Object' => 'Set::Scalar';
-
+use Set::Object;
 print "1..1\n";
 
-my $s = Set::Scalar->new(0..99);
+my $s = Set::Object->new(0..99);
 
 $s->clear;
 

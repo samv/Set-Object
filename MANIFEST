@@ -34,12 +34,9 @@ t/scalar/difference.t
 t/scalar/each.t
 t/scalar/has.t
 t/scalar/intersection.t
-t/scalar/laws.t
 t/scalar/member.t
 t/scalar/misc.t
-t/scalar/null.t
 t/scalar/set_set.t
 t/scalar/symmdiff.t
 t/scalar/union.t
 t/scalar/unique.t
-t/scalar/universe.t

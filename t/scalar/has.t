@@ -1,8 +1,8 @@
-use aliased 'Set::Object' => 'Set::Scalar';
 
+use Set::Object;
 print "1..3\n";
 
-my $s = Set::Scalar->new(qw(a b c 0));
+my $s = Set::Object->new(qw(a b c 0));
 
 print "not " unless $s->has('a');
 print "ok 1\n";

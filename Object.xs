@@ -27,7 +27,6 @@ typedef struct _ISET
 	BUCKET* bucket;
 	I32 buckets, elems;
         HV* flat;
-        HV* outer;
 } ISET;
 
 #define ISET_HASH(el) ((I32) (el) >> 4)
@@ -83,69 +82,37 @@ int iset_insert_scalar(ISET* s, SV* sv)
   SV** oldsvref;
 
   if (!s->flat) {
-    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): creating hashes", s));
+    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): creating scalar hash", s));
     s->flat = newHV();
-    s->outer = newHV();
   }
 
   //SvGETMAGIC(sv);
   key = SvPV(sv, len);
+
   IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): sv (%x, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
 
-  if (oldsvref = hv_fetch(s->outer, key, len, 0)) {
-    SV* oldsv = *oldsvref;
+  if (!hv_exists(s->flat, key, len)) {
 
-    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): got old sv (%x, rc = %d, str= '%s')!", s, oldsv, SvREFCNT(oldsv), SvPV_nolen(oldsv)));
-
-    SvREFCNT_inc(oldsv);
-    if (!hv_store(s->flat, key, len, oldsv, 0)) {
-      warn("hv store failed[?] set=%x, sv=%x(str='%s')",
-	   s, oldsv, SvPV_nolen(oldsv));
+    if (!hv_store(s->flat, key, len, &PL_sv_undef, 0)) {
+      warn("hv store failed[?] set=%x", s);
     }
 
-    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): remembering old sv (%x, rc = %d)!", s, oldsv, SvREFCNT(oldsv)));
-
-    //warn("remove: rc++ (%x, rc = %d)!", oldsv, SvREFCNT(oldsv));
-    //IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): rc++ (%x, rc = %d)!", s, oldsv, SvREFCNT(oldsv)));
-
-    hv_delete(s->outer, key, len, G_DISCARD);
-
-    //SvREFCNT_dec(oldsv);
-
-    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): deleted old sv (%x, rc = %d)!", s, oldsv, SvREFCNT(oldsv)));
-
-    // convert to a string...
-    //warn("Found, removing via delete");
-    return 1;
-  }
-  else if (!hv_exists(s->flat, key, len)) {
-
-    SV* newsv;
-
-    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): sv (%x, rc = %d)!", s, sv, SvREFCNT(sv)));
-
-    newsv = newSVsv(sv);
-
-    SvREFCNT_inc(sv);
-
-    if (hv_store(s->flat, key, len, newsv, 0)) {
-      IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): newsv (%x, rc = %d) stored", s, newsv, SvREFCNT(newsv)));
-    } else {
-      SvREFCNT_dec(newsv);
-      warn("set insert of scalar '%s' failed!", SvPV_nolen(newsv));
-    }
+    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): inserted OK!", s));
 
     return 1;
   }
+  else {
+    
+    IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): already there!", s));
+    return 0;
+  }
 
-  return 0;
 }
 
 int iset_remove_scalar(ISET* s, SV* sv)
 {
   STRLEN len;
   char* key = 0;
-  SV** oldsvref;
 
   if (!s->flat) {
     IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): shortcut for %x(str = '%s') (no hash)", s, sv, SvPV_nolen(sv)));
@@ -158,29 +125,16 @@ int iset_remove_scalar(ISET* s, SV* sv)
 
   key = SvPV(sv, len);
 
-  if (oldsvref = hv_fetch(s->flat, key, len, 0)) {
-    SV* oldsv = *oldsvref;
+  if ( hv_delete(s->flat, key, len, 0) ) {
 
-    IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): got old sv (%x, rc = %d, str= '%s')!", s, oldsv, SvREFCNT(oldsv), SvPV_nolen(oldsv)));
-
-    SvREFCNT_inc(oldsv);
-
-    hv_store(s->outer, key, len, oldsv, 0);
-
-    IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): remembered old sv (%x, rc = %d)!", s, oldsv, SvREFCNT(oldsv)));
-
-    //warn("remove: rc++ (%x, rc = %d)!", oldsv, SvREFCNT(oldsv));
-    IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): removed old sv (%x, rc = %d)!", s, oldsv, SvREFCNT(oldsv)));
-
-    hv_delete(s->flat, key, len, G_DISCARD);
-
-    IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): deleted old sv (%x, rc = %d)!", s, oldsv, SvREFCNT(oldsv)));
-
-    // convert to a string...
-    //warn("Found, removing via delete");
+    IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): deleted key", s));
     return 1;
+
+  } else {
+
+    IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): key not absent", s));
+    return 0;
   }
-  return 0;
   
 }
 
@@ -404,60 +358,25 @@ int inserted = 0;
       XSRETURN_IV(inserted);
   
 void
-is_universal(self, ...)
-     SV* self;
-
-     PPCODE:
-      ISET* s = (ISET*) SvIV(SvRV(self));
-
-      if (s->flat) {
-	if (HvUSEDKEYS(s->outer))
-	  XSRETURN_UNDEF;
-      }
-
-      XSRETURN_IV(1);
-
-void
-_complement(self, ...)
-     SV* self;
-
-     PPCODE:
-      ISET* s = (ISET*) SvIV(SvRV(self));
-
-      if (s->flat) {
-	HV* slurp = s->outer;
-	s->outer = s->flat;
-	s->flat = slurp;
-      }
-
-      XSRETURN_IV(1);
-
-void
 _(self, ...)
      SV* self;
 
      CODE:
       ISET* s = (ISET*) SvIV(SvRV(self));
-      SV* flat, *outer;
+      SV* flat;
 
       POPs;
 
       if (!s->flat) {
 	IF_INSERT_DEBUG(warn("iset_internal(%x): creating hashes", s));
 	s->flat = newHV();
-	s->outer = newHV();
       }
 
       flat = newRV_inc(s->flat);
-      outer = newRV_inc(s->outer);
 	
       SvREFCNT_inc(flat);
-      SvREFCNT_inc(outer);
       PUSHs(sv_2mortal(flat));
-      PUSHs(sv_2mortal(outer));
-      XSRETURN(2);
-
-
+      XSRETURN(1);
      
 void
 remove(self, ...)
@@ -665,44 +584,12 @@ members(self)
         int i = 0, num = hv_iterinit(s->flat);
 
         while (i++ < num) {
-	  //warn("i=%d, num=%d", i, num);
 	  HE* he = hv_iternext(s->flat);
 
-	  //warn("Got here");
-	  SV* topic = hv_iterval(s->flat, he);
-	  //warn("Got here 2");
-	  //warn("copying item - %x (rc = %d)", (int)topic, SvREFCNT(topic));
-	  SV* el = newSVsv(topic);
-	  PUSHs(sv_2mortal(el));
-	  //warn("returning mortal - %x (rc = %d)", (int)el, SvREFCNT(el));
+	  PUSHs(HeSVKEY_force(he));
         }
       }
 //warn("that's all, folks");
-
-void
-check(self)
-   SV* self
-
-   CODE:
-      ISET* s = (ISET*) SvIV(SvRV(self));
-      if (s->flat) {
-	  HE* he; // he
-	  hv_iterinit(s->flat);
-	  while (he = hv_iternext(s->flat)) {
-	    SV* el = hv_iterval(s->flat, he);
-
-	    if (SvREFCNT(el) != 1) {
-	      warn("iset_check: el = %x (rc = %d, str = '%s')", el, SvREFCNT(el), SvPV_nolen(el));
-	    }
-	  }
-	  while (he = hv_iternext(s->outer)) {
-	    SV* el = hv_iterval(s->flat, he);
-
-	    if (SvREFCNT(el) != 1) {
-	      warn("iset_check: outer el = %x (rc = %d, str = '%s')", el, SvREFCNT(el), SvPV_nolen(el));
-	    }
-	  }
-      }
 
 void
 clear(self)
@@ -713,51 +600,10 @@ clear(self)
 
       iset_clear(s);
       if (s->flat) {
-	  HE* he; // he
-	  hv_iterinit(s->flat);
-	  while (he = hv_iternext(s->flat)) {
-	    int len;
-	    char* key = HePV(he, len);
-	    SV* el = hv_iterval(s->flat, he);
-
-	    IF_REMOVE_DEBUG(warn("iset_clear: el = %x (rc = %d, str = '%s')", el, SvREFCNT(el), SvPV_nolen(el)));
-	    hv_delete(s->flat, key, len, G_DISCARD);
-	    IF_REMOVE_DEBUG(warn("iset_clear: DELETED: el = %x (rc = %d)", el, SvREFCNT(el)));
-	    SvREFCNT_inc(el);
-	    if (!hv_store(s->outer, key, len, el, 0)) {
-	      warn("set internal error (hv_store) with '%s'", SvPV_nolen(el));
-	    }
-	    IF_REMOVE_DEBUG(warn("iset_clear: STORED in outer: el = %x (rc = %d)", el, SvREFCNT(el)));
-	  }
+	hv_clear(s->flat);
+	IF_REMOVE_DEBUG(warn("iset_clear(%x): cleared", s));
       }
       
-void
-fill(self)
-   SV* self
-
-   CODE:
-      ISET* s = (ISET*) SvIV(SvRV(self));
-
-      iset_clear(s);
-      if (s->flat) {
-	  HE* he; // he
-	  hv_iterinit(s->outer);
-	  while (he = hv_iternext(s->outer)) {
-	    int len;
-	    char* key = HePV(he, len);
-	    SV* el = hv_iterval(s->outer, he);
-
-	    IF_REMOVE_DEBUG(warn("iset_fill: el = %x (rc = %d, str = '%s')", el, SvREFCNT(el), SvPV_nolen(el)));
-	    hv_delete(s->outer, key, len, G_DISCARD);
-	    IF_REMOVE_DEBUG(warn("iset_fill: DELETED: el = %x (rc = %d)", el, SvREFCNT(el)));
-	    SvREFCNT_inc(el);
-	    if (!hv_store(s->flat, key, len, el, 0)) {
-	      warn("set internal error (hv_store) with '%s'", SvPV_nolen(el));
-	    }
-	    IF_REMOVE_DEBUG(warn("iset_fill: STORED in outer: el = %x (rc = %d)", el, SvREFCNT(el)));
-	  }
-      }
- 
 void
 DESTROY(self)
    SV* self
@@ -766,24 +612,10 @@ DESTROY(self)
 
       ISET* s = (ISET*) SvIV(SvRV(self));
       IF_DEBUG(warn("aargh!\n"));
-//warn("destroying set id = %x", s);
       iset_clear(s);
       if (s->flat) {
-	//warn("about to dec self(%x/%x)->flat(%x) from %d",
-	     //self, s, s->flat, SvREFCNT(s->flat));
-	//SvREFCNT_dec(s->flat);
-	//warn("ok");
-	//warn("about to dec outer(%x/%x)->flat(%x) from %d",
-	     //self, s, s->outer, SvREFCNT(s->outer));
-	//SvREFCNT_dec(s->outer);
-	//warn("ok");
-	//warn("that took them to (rc(flat) == %d, rc(outer) == %d)",
-	     //SvREFCNT(s->flat), SvREFCNT(s->outer) );
-	  //hv_undef(s->flat);
-	  //s->flat = 0;
-	  //hv_undef(s->outer);
-	  //s->outer = 0;
-	}
+	hv_undef(s->flat);
+      }
       Safefree(s);
       
    /* Here are some functions from Scalar::Util; they are so simple,
