@@ -60,3 +60,9 @@ Revision history for Perl extension Set::Object.
 	- yet another segfault fix, this time due to incorrect use of
 	  PUSHs vs XPUSHs.  There is no test case for this bug
 	  unfortunately.
+
+1.08 14 Oct 2004
+	- another segfault bites the dust; this time, avoids a
+	  segfault when taking a difference between sets of exactly
+	  31 and 0 size.  Same root fault as the previous bug, this
+	  time I have a test case for it, too.

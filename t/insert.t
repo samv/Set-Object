@@ -29,7 +29,7 @@ is($simpsons->size(), 5, "Set::Object->size() [ lots of inserts ]");
 
 # Now be really abusive
 eval { $simpsons->insert("bogon") };
-like($@, qr/non-reference/i, "Caught feeding in a bogon OK");
+like($@, qr/Tried to insert/i, "Caught feeding in a bogon OK");
 
 my $test = new Set::Object;
 eval { $test->insert("bogon"); };
