@@ -14,3 +14,6 @@ Revision history for Perl extension Set::Object.
 1.01 8 Nov 1999
 	- no longer use Perl arrays internally, now compatible with Perl 5.005_62
 
+1.02 8 May 08 2000
+	- fixed bug that miscomputed new bucket while reindexing
+

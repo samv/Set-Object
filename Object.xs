@@ -9,7 +9,7 @@ extern "C" {
 }
 #endif
 
-#define IF_DEBUG(e) 
+#define IF_DEBUG(e)
 
 typedef struct _BUCKET
 {
@@ -121,8 +121,7 @@ void iset_insert_one(ISET* s, SV* rv)
 			for (; el_iter != el_last; ++el_iter)
 			{
 				SV* sv = *el_iter;
-				SV* rv = SvRV(sv);
-				I32 hash = ISET_HASH(rv);
+				I32 hash = ISET_HASH(sv);
 				I32 index = hash & (newn - 1);
 
 				if (index == i)
@@ -132,7 +131,9 @@ void iset_insert_one(ISET* s, SV* rv)
 				}
 
 				new_bucket = bucket_first + index;
-				insert_in_bucket(bucket_first + index, sv);
+				IF_DEBUG(warn("%p moved from bucket %d:%p to %d:%p",
+					sv, i, bucket_iter, index, new_bucket));
+				insert_in_bucket(new_bucket, sv);
 			}
          
 			new_bucket_size = el_out_iter - bucket_iter->sv;
@@ -346,6 +347,9 @@ includes(self, ...)
          hash = ISET_HASH(rv);
          index = hash & (s->buckets - 1);
          bucket = s->bucket + index;
+
+		 IF_DEBUG(warn("includes: looking for %p in bucket %d:%p",
+		      rv, index, bucket));
 
          if (!bucket->sv)
             XSRETURN_NO;
