@@ -9,7 +9,7 @@ extern "C" {
 }
 #endif
 
-#define IF_DEBUG(e)
+#define IF_DEBUG(e)  
 
 typedef struct _BUCKET
 {
@@ -641,7 +641,6 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
    PPCODE:
 
    {
-	   SV* self;
 	   ISET* s;
 	   I32 item;
 	   SV* isv;
@@ -654,19 +653,15 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
 	   if (!SvROK(obj)) {
 	     Perl_croak(aTHX_ "Set::Object::STORABLE_thaw passed a non-reference");
 	   }
+
+	   /* FIXME - some random segfaults with 5.6.1, Storable 2.07,
+		      freezing closures, and back-references to
+		      overloaded objects.  One day I might even
+		      understand why :-)
+	    */
 	   isv = SvRV(obj);
-	   //if (!SvIOKp(isv)) {
-	     //Perl_croak(aTHX_ "Storable sucks");
-	   //}
 	   SvIV_set(isv, (IV) s);
 	   SvIOK_on(isv);
-
-	   //sv_2mortal(isv);
-
-	   //self = newRV_inc(isv);
-	   //sv_2mortal(self);
-
-	   //sv_bless(self, gv_stashsv(pkg, FALSE));
 
 	   for (item = 3; item < items; ++item)
 	   {
@@ -675,6 +670,6 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
 
       IF_DEBUG(warn("set!\n"));
 
-      PUSHs(self);
+      PUSHs(obj);
       XSRETURN(1);
    }

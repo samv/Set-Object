@@ -47,3 +47,7 @@ Revision history for Perl extension Set::Object.
 	- serialisation of Set::Object objects is now possible via the
 	  Storable module (Data::Dumper still does the wrong thing,
 	  but there is nothing I can do about that).
+
+1.05 5 Jan 2004
+	- some segfault fixes with Storable and Perl 5.6.1 (Perl 5.8.1
+	  should be OK)
