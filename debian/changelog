@@ -1,0 +1,9 @@
+libset-object-perl (1.03) unstable; urgency=low
+
+  * Fixed overload bug
+
+ -- Sam Vilain <sam@vilain.net>  Fri, 24 Jan 2003 19:34:15 +1300
+
+Local variables:
+mode: debian-changelog
+End:
