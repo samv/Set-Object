@@ -24,3 +24,4 @@ debian/changelog
 debian/control
 debian/copyright
 debian/rules
+META.yml                                Module meta-data (added by MakeMaker)

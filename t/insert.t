@@ -1,30 +1,62 @@
+# -*- perl -*-
+
 use Set::Object;
 
 require 't/Person.pm';
 package Person;
+use Test::More tests => 18;
 
 populate();
 
 $simpsons = Set::Object->new;
 
-print "1..5\n";
-
-print 'not' unless $simpsons->size() == 0;
-print "ok 1\n";
+is($simpsons->size(), 0, "Set::Object->size() [ no contents ]");
 
 $added = $simpsons->insert($homer);
-print 'not ' unless $simpsons->size() == 1 && $added == 1;
-print "ok 2\n";
+is($added, 1, "Set::Object->insert() [ returned # added ]");
+is($simpsons->size(), 1, "Set::Object->size() [ one member ]");
 
 $added = $simpsons->insert($homer);
-print 'not ' unless $simpsons->size() == 1 && $added == 0;
-print "ok 3\n";
+is($added, 0, "Set::Object->insert() [ returned # added ]");
+is($simpsons->size(), 1, "Set::Object->size() [ one member ]");
 
 $added = $simpsons->insert($marge);
-print 'not ' unless $simpsons->size() == 2 && $added == 1;
-print "ok 4\n";
+is($added, 1, "Set::Object->insert() [ returned # added ]");
+is($simpsons->size(), 2, "Set::Object->size() [ two members ]");
 
 $simpsons->insert($maggie, $homer, $bart, $marge, $bart, $lisa, $lisa, $maggie);
-print 'not ' unless $simpsons->size() == 5;
-print "ok 5\n";
+is($simpsons->size(), 5, "Set::Object->size() [ lots of inserts ]");
+
+# Now be really abusive
+eval { $simpsons->insert("bogon") };
+like($@, qr/non-reference/i, "Caught feeding in a bogon OK");
+
+my $test = new Set::Object;
+eval { $test->insert("bogon"); };
+is ( $test."", "Set::Object()", "as_string on bogon-ified set");
+
+# array refs
+my $array;
+$test->insert($array = [ "array", "ref" ]);
+my $array2 = [ "array", "ref" ];
+
+$test->insert($array);
+is ($test->size(), 1, "Inserted an array OK");
+ok ($test->includes($array), "Can put non-objects in a set");
+ok (!$test->includes($array2), "Lookup of identical item doesn't work");
+
+like ( $test."", qr/Set::Object\(ARRAY/, "Inserted an array OK");
+
+# hash refs
+$test->clear();
+my $hash;
+$test->insert($hash = { "hash" => "ref" });
+my $hash2 = { "hash" => "ref" };
+
+$test->insert($hash);
+is ($test->size(), 1, "Inserted an hash OK");
+ok ($test->includes($hash), "Can put non-objects in a set");
+ok (!$test->includes($hash2), "Lookup of identical item doesn't work");
+
+like ( $test."", qr/Set::Object\(HASH/, "Inserted an array OK");
 
