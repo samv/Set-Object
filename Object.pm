@@ -181,7 +181,7 @@ require AutoLoader;
 @EXPORT = qw(
 
 );
-$VERSION = '0.002';
+$VERSION = '0.003';
 
 bootstrap Set::Object $VERSION;
 
@@ -224,8 +224,7 @@ sub equal
 
 sub not_equal
 {
-   croak 'usage: $s1->not_equal($s2)' unless @_ == 2;
-   !shift->eq(shift);
+   !shift->equal(shift);
 }
 
 sub union
