@@ -153,7 +153,7 @@ Jean-Louis Leroy, jll@skynet.be
 
 =head1 LICENCE
 
-Copyright (c) 1998, Jean-Louis Leroy. All Rights Reserved.
+Copyright (c) 1998-1999, Jean-Louis Leroy. All Rights Reserved.
 This module is free software. It may be used, redistributed
 and/or modified under the terms of the Perl Artistic License
 
@@ -181,29 +181,11 @@ require AutoLoader;
 @EXPORT = qw(
 
 );
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 bootstrap Set::Object $VERSION;
 
 # Preloaded methods go here.
-
-sub dump
-{
-   my $self = shift;
-   my $i = 0;
-
-   foreach my $bucket (@$self)
-   {
-      if ($bucket)
-      {
-         printf "%4d: ", $i;
-         print join ' ', @$bucket;
-         print "\n";
-      }
-
-      ++$i;
-   }
-}
 
 sub _members
 {
@@ -261,7 +243,6 @@ sub op_intersection
 sub difference
 {
    my ($s1, $s2, $r) = @_;
-   ($s1, $s2) = ($s2, $s1) if $r;
    Set::Object->new( grep { !$s2->includes($_) } $s1->members );
 }
 
@@ -273,28 +254,26 @@ sub symmetric_difference
 
 sub proper_subset
 {
-   my ($s1, $s2, $r) = @_;
-   ($s1, $s2) = ($s2, $s1) if $r;
+   my ($s1, $s2) = @_;
    $s1->size < $s2->size && $s1->subset( $s2 );
 }
 
 sub subset
 {
    my ($s1, $s2, $r) = @_;
-   ($s1, $s2) = ($s2, $s1) if $r;
    $s2->includes($s1->members);
 }
 
 sub proper_superset
 {
    my ($s1, $s2, $r) = @_;
-   proper_subset( $s1, $s2, !$r);
+   proper_subset( $s2, $s1 );
 }
 
 sub superset
 {
-   my ($s1, $s2, $r) = @_;
-   subset( $s1, $s2, !$r);
+   my ($s1, $s2) = @_;
+   subset( $s2, $s1 );
 }
 
 # following code pasted from Set::Scalar; thanks Jarkko Hietaniemi

@@ -9,138 +9,195 @@ extern "C" {
 }
 #endif
 
+#define IF_DEBUG(e) 
+
+typedef struct _BUCKET
+{
+	SV** sv;
+	int n;
+} BUCKET;
+
 typedef struct _ISET
 {
-   struct xpvav iset_xpvav;
-   I32 iset_fill, iset_max, iset_elems;
+	BUCKET* bucket;
+	I32 buckets, elems;
 } ISET;
 
 #define ISET_HASH(el) ((I32) (el) >> 4)
 
-void iset_insert_one(AV* array, SV* el)
+int insert_in_bucket(BUCKET* pb, SV* sv)
 {
-   ISET* s;
-   SV *rv, **ppb;
-   I32 hash, index;
+	if (!pb->sv)
+	{
+		New(0, pb->sv, 1, SV*);
+		pb->sv[0] = sv;
+		pb->n = 1;
+		IF_DEBUG(warn("inserting %p in bucket %p offset %d\n", sv, pb, 0));
+	}
+	else
+	{
+		SV **iter = pb->sv, **last = pb->sv + pb->n, **hole = 0;
 
-   if (!SvROK(el))
-      croak("element must be a reference");
+		for (; iter != last; ++iter)
+		{
+			if (*iter)
+			{
+				if (*iter == sv)
+					return 0;
+			}
+			else
+				hole = iter;
+		}
 
-   s = (ISET*) array->sv_any;
-   rv = SvRV(el);
+		if (!hole)
+		{
+			Renew(pb->sv, pb->n + 1, SV*);
+			hole = pb->sv + pb->n;
+			++pb->n;
+		}
 
-   if (s->iset_max == -1)
-   {
-      av_extend(array, 8);
-      s->iset_max = 7;
-   }
+		*hole = sv;
 
-   hash = ISET_HASH(rv);
-   index = hash & s->iset_max;
-   ppb = av_fetch(array, index, 0);
+		IF_DEBUG(warn("inserting %p in bucket %p offset %d\n", sv, pb, iter - pb->sv));
+	}
+	
+	return 1;
+}
 
-   if (!ppb)
-   {
-      AV* pb = newAV();
-      av_push(pb, newRV_inc(rv));
-      av_store(array, index, newRV_noinc((SV*) pb));
-      ++s->iset_fill;
-      ++s->iset_elems;
-   }
-   else
-   {
-      AV* pb = (AV*) SvRV(*ppb);
-      int nj = av_len(pb);
-      int j;
+void iset_insert_one(ISET* s, SV* rv)
+{
+	BUCKET** ppb;
+	I32 hash, index;
+	SV* el = SvRV(rv);
 
-      for (j = 0; j <= nj; ++j)
-      {
-         SV** pel = av_fetch(pb, j, 0);
+	SvROK(rv);
 
-         if (pel && SvRV(*pel) == rv)
-            return;
-      }
+	if (!s->buckets)
+	{
+		Newz(0, s->bucket, 8, BUCKET);
+		s->buckets = 8;
+	}
 
-      av_push(pb, newRV_inc(rv));
-      ++s->iset_elems;
-   }
+	hash = ISET_HASH(el);
+	index = hash & (s->buckets - 1);
 
-   if (s->iset_elems == s->iset_max)
-   {
-      int newmax = 2 * (s->iset_max + 1) - 1;
-      SV** bucket_first;
-      SV** bucket_iter;
-      SV** bucket_last;
-      SV** new_bucket;
-      int i;
+	if (insert_in_bucket(s->bucket + index, el))
+	{
+		++s->elems;
+		SvREFCNT_inc(el);
+		IF_DEBUG(warn("rc of %p bumped to %d\n", el, SvREFCNT(el)));
+	}
 
-      av_extend(array, newmax + 1);
+	if (s->elems > s->buckets)
+	{
+		int oldn = s->buckets;
+		int newn = oldn << 1;
 
-      bucket_first = AvARRAY(array);
-      bucket_iter = bucket_first;
-      bucket_last = bucket_iter + av_len(array) + 1;
+		BUCKET *bucket_first, *bucket_iter, *bucket_last, *new_bucket;
+		int i;
 
-      for (i = 0; bucket_iter != bucket_last; ++bucket_iter, ++i)
-      {
-         AV* bucket;
-         SV **el_iter, **el_last, **el_out_iter;
-         I32 newfill;
+		IF_DEBUG(warn("Reindexing, n = %d\n", s->elems));
 
-         if (*bucket_iter == &sv_undef)
+		Renew(s->bucket, newn, BUCKET);
+		Zero(s->bucket + oldn, oldn, BUCKET);
+		s->buckets = newn;
+
+		bucket_first = s->bucket;
+		bucket_iter = bucket_first;
+		bucket_last = bucket_iter + oldn;
+
+		for (i = 0; bucket_iter != bucket_last; ++bucket_iter, ++i)
+		{
+			SV **el_iter, **el_last, **el_out_iter;
+			I32 new_bucket_size;
+
+			if (!bucket_iter->sv)
+				continue;
+
+			el_iter = bucket_iter->sv;
+			el_last = el_iter + bucket_iter->n;
+			el_out_iter = el_iter;
+
+			for (; el_iter != el_last; ++el_iter)
+			{
+				SV* sv = *el_iter;
+				SV* rv = SvRV(sv);
+				I32 hash = ISET_HASH(rv);
+				I32 index = hash & (newn - 1);
+
+				if (index == i)
+				{
+					*el_out_iter++ = *el_iter;
+					continue;
+				}
+
+				new_bucket = bucket_first + index;
+				insert_in_bucket(bucket_first + index, sv);
+			}
+         
+			new_bucket_size = el_out_iter - bucket_iter->sv;
+
+			if (!new_bucket_size)
+			{
+				Safefree(bucket_iter->sv);
+				bucket_iter->sv = 0;
+				bucket_iter->n = 0;
+			}
+
+			else if (new_bucket_size < bucket_iter->n)
+			{
+				Renew(bucket_iter->sv, new_bucket_size, SV*);
+				bucket_iter->n = new_bucket_size;
+			}
+		}
+	}
+}
+
+void iset_clear(ISET* s)
+{
+	BUCKET* bucket_iter = s->bucket;
+	BUCKET* bucket_last = bucket_iter + s->buckets;
+
+	for (; bucket_iter != bucket_last; ++bucket_iter)
+	{
+		SV **el_iter, **el_last;
+
+		if (!bucket_iter->sv)
             continue;
 
-         bucket = (AV*) SvRV(*bucket_iter);
+		el_iter = bucket_iter->sv;
+		el_last = el_iter + bucket_iter->n;
 
-         el_iter = AvARRAY(bucket);
-         el_last = el_iter + av_len(bucket) + 1;
-         el_out_iter = el_iter;
+		for (; el_iter != el_last; ++el_iter)
+		{
+			if (*el_iter)
+			{
+				IF_DEBUG(warn("freeing %p, rc = %d, bucket = %p(%d) pos = %d\n",
+					 *el_iter, SvREFCNT(*el_iter),
+					 bucket_iter, bucket_iter - s->bucket,
+					 el_iter - bucket_iter->sv));
 
-         for (; el_iter != el_last; ++el_iter)
-         {
-            SV* sv = *el_iter;
-            SV* rv = SvRV(sv);
-            I32 hash = ISET_HASH(rv);
-            I32 index = hash & newmax;
+				SvREFCNT_dec(*el_iter);
+				*el_iter = 0;
+			}
+		}
 
-            if (index == i)
-            {
-               *el_out_iter++ = *el_iter;
-               continue;
-            }
+		Safefree(bucket_iter->sv);
 
-            new_bucket = bucket_first + index;
+		bucket_iter->sv = 0;
+		bucket_iter->n = 0;
+	}
 
-            if (*new_bucket == &sv_undef)
-            {
-               AV* pb = newAV();
-               av_push(pb, sv);
-               av_store(array, new_bucket - bucket_first, newRV_noinc((SV*) pb));
-            }
-            else
-            {
-               av_push((AV*) SvRV(*new_bucket), sv);
-            }
-         
-         }
-         
-         newfill = el_out_iter - AvARRAY(bucket) - 1;
-
-         for (; el_out_iter != el_last; ++el_out_iter)
-         {
-            *el_out_iter = &sv_undef;
-         }
-
-         av_fill(bucket, newfill);
-      }
-
-      s->iset_max = newmax;
-   }
+	Safefree(s->bucket);
+	s->bucket = 0;
+	s->buckets = 0;
+	s->elems = 0;
 }
+
 
 MODULE = Set::Object		PACKAGE = Set::Object		
 
 PROTOTYPES: DISABLE
-      
 
 SV*
 new(pkg, ...)
@@ -148,103 +205,94 @@ new(pkg, ...)
 
    PPCODE:
 
-      SV* self;
-      AV* array = newAV();
-      ISET* s;
-      I32 item;
-      
-      array->sv_any = (struct xpvav*) saferealloc(array->sv_any, sizeof(ISET));
+   {
+	   SV* self;
+	   ISET* s;
+	   I32 item;
+	   SV* isv;
+	
+	   New(0, s, 1, ISET);
+	   s->elems = 0;
+	   s->bucket = 0;
+	   s->buckets = 0;
 
-      s = (ISET*) array->sv_any;
-      s->iset_fill = 0;
-      s->iset_elems = 0;
-      s->iset_max = -1;
+	   isv = newSViv((IV) s);
+	   sv_2mortal(isv);
 
-      self = newRV_noinc((SV*) array);
-      sv_bless(self, gv_stashsv(pkg, FALSE));
-      sv_2mortal(self);
+	   self = newRV_inc(isv);
+	   sv_2mortal(self);
 
-      for (item = 1; item < items; ++item)
-      {
-         iset_insert_one(array, ST(item));
-      }
+	   sv_bless(self, gv_stashsv(pkg, FALSE));
+
+	   for (item = 1; item < items; ++item)
+	   {
+		   iset_insert_one(s, ST(item));
+	   }
+
+      IF_DEBUG(warn("set!\n"));
 
       PUSHs(self);
       XSRETURN(1);
+   }
 
 void
 insert(self, ...)
    SV* self;
 
    PPCODE:
-
-      AV* array = (AV*) SvRV(self);
-      ISET* s = (ISET*) array->sv_any;
+	  ISET* s = (ISET*) SvIV(SvRV(self));
       I32 item;
-      int init_elems = s->iset_elems;
+      int init_elems = s->elems;
 
       for (item = 1; item < items; ++item)
       {
-         iset_insert_one(array, ST(item));
+		  iset_insert_one(s, ST(item));
+		  IF_DEBUG(warn("inserting %p %p size = %d\n", ST(item), SvRV(ST(item)), s->elems));
       }
 
-      XSRETURN_IV(s->iset_elems - init_elems);
 
+      XSRETURN_IV(s->elems - init_elems);
+  
 void
 remove(self, ...)
    SV* self;
 
    PPCODE:
 
-      AV* array = (AV*) SvRV(self);
-      ISET* s = (ISET*) array->sv_any;
+      ISET* s = (ISET*) SvIV(SvRV(self));
       I32 hash, index, item;
-      SV **ppb, **el_iter, **el_last, **el_out_iter;
-      AV* bucket;
-      int init_elems = s->iset_elems;
+      SV **el_iter, **el_last, **el_out_iter;
+      BUCKET* bucket;
+      int init_elems = s->elems;
 
       for (item = 1; item < items; ++item)
       {
          SV* el = ST(item);
          SV* rv = SvRV(el);
-         I32 newfill;
          hash = ISET_HASH(rv);
-         index = hash & s->iset_max;
-         ppb = av_fetch(array, index, 0);
+         index = hash & (s->buckets - 1);
+         bucket = s->bucket + index;
 
-         if (!ppb)
+         if (!bucket->sv)
             continue;
 
-         bucket = (AV*) SvRV(*ppb);
-
-         el_iter = AvARRAY(bucket);
+         el_iter = bucket->sv;
          el_out_iter = el_iter;
-         el_last = el_iter + av_len(bucket) + 1;
+         el_last = el_iter + bucket->n;
 
          for (; el_iter != el_last; ++el_iter)
          {
-            if (SvRV(*el_iter) == rv)
+            if (*el_iter == rv)
             {
-               SvREFCNT_dec(*el_iter);
-               --s->iset_elems;
-            }
-            else
-            {
-               *el_out_iter++ = *el_iter;
+               SvREFCNT_dec(rv);
+			   *el_iter = 0;
+               --s->elems;
+			   break;
             }
          }
-         
-         newfill = el_out_iter - AvARRAY(bucket) - 1;
+	  }
 
-         for (; el_out_iter != el_last; ++el_out_iter)
-         {
-            *el_out_iter = &sv_undef;
-         }
-
-         av_fill(bucket, newfill);
-      }
-
-      XSRETURN_IV(init_elems - s->iset_elems);
+      XSRETURN_IV(init_elems - s->elems);
 
 int
 size(self)
@@ -252,8 +300,27 @@ size(self)
 
    CODE:
 
-      ISET* s = (ISET*) ((AV*) SvRV(self))->sv_any;
-      RETVAL = s->iset_elems;
+      RETVAL = ((ISET*) SvIV(SvRV(self)))->elems;
+
+   OUTPUT: RETVAL
+
+int
+rc(self)
+   SV* self;
+
+   CODE:
+
+      RETVAL = SvREFCNT(self);
+
+   OUTPUT: RETVAL
+
+int
+rvrc(self)
+   SV* self;
+
+   CODE:
+
+      RETVAL = SvREFCNT(SvRV(self));
 
    OUTPUT: RETVAL
 
@@ -263,30 +330,31 @@ includes(self, ...)
 
    PPCODE:
 
-      AV* array = (AV*) SvRV(self);
-      ISET* s = (ISET*) array->sv_any;
+      ISET* s = (ISET*) SvIV(SvRV(self));
       I32 hash, index, item;
-      SV **ppb, **el_iter, **el_last;
-      AV* bucket;
+      SV **el_iter, **el_last;
+      BUCKET* bucket;
 
       for (item = 1; item < items; ++item)
       {
          SV* el = ST(item);
          SV* rv = SvRV(el);
-         hash = ISET_HASH(rv);
-         index = hash & s->iset_max;
-         ppb = av_fetch(array, index, 0);
 
-         if (!ppb)
+         if (!s->buckets)
             XSRETURN_NO;
 
-         bucket = (AV*) SvRV(*ppb);
+         hash = ISET_HASH(rv);
+         index = hash & (s->buckets - 1);
+         bucket = s->bucket + index;
 
-         el_iter = AvARRAY(bucket);
-         el_last = el_iter + av_len(bucket) + 1;
+         if (!bucket->sv)
+            XSRETURN_NO;
+
+         el_iter = bucket->sv;
+         el_last = el_iter + bucket->n;
 
          for (; el_iter != el_last; ++el_iter)
-            if (SvRV(*el_iter) == rv)
+            if (*el_iter == rv)
                goto next;
             
          XSRETURN_NO;
@@ -303,32 +371,30 @@ members(self)
    
    PPCODE:
 
-      AV* array = (AV*) SvRV(self);
-      SV** bucket_iter = AvARRAY(array);
-      SV** bucket_last = bucket_iter + av_len(array) + 1;
-      ISET* s = (ISET*) array->sv_any;
+      ISET* s = (ISET*) SvIV(SvRV(self));
+      BUCKET* bucket_iter = s->bucket;
+      BUCKET* bucket_last = bucket_iter + s->buckets;
 
-      EXTEND(sp, s->iset_elems - 1);
+      EXTEND(sp, s->elems - 1);
 
       for (; bucket_iter != bucket_last; ++bucket_iter)
       {
-         AV* bucket;
          SV **el_iter, **el_last;
 
-         if (*bucket_iter == &sv_undef)
+         if (!bucket_iter->sv)
             continue;
 
-         bucket = (AV*) SvRV(*bucket_iter);
-
-         el_iter = AvARRAY(bucket);
-         el_last = el_iter + av_len(bucket) + 1;
+         el_iter = bucket_iter->sv;
+         el_last = el_iter + bucket_iter->n;
 
          for (; el_iter != el_last; ++el_iter)
-            if (*el_iter != &sv_undef)
-               PUSHs(*el_iter);
+            if (*el_iter)
+			{
+				SV* el = newRV(*el_iter);
+				sv_2mortal(el);
+               	PUSHs(el);
+			}
       }
-
-      XSRETURN(s->iset_elems);
 
 void
 clear(self)
@@ -336,18 +402,18 @@ clear(self)
 
    CODE:
 
-      AV* array = (AV*) SvRV(self);
-      SV** bucket_iter = AvARRAY(array);
-      SV** bucket_last = bucket_iter + av_len(array) + 1;
-      ISET* s = (ISET*) array->sv_any;
+      iset_clear((ISET*) SvIV(SvRV(self)));
 
-      for (; bucket_iter != bucket_last; ++bucket_iter)
-      {
-         if (*bucket_iter == &sv_undef)
-            continue;
+void
+DESTROY(self)
+   SV* self
 
-         SvREFCNT_dec(*bucket_iter);
-         *bucket_iter = &sv_undef;
-      }
+   CODE:
 
-      s->iset_elems = 0;
+      ISET* s = (ISET*) SvIV(SvRV(self));
+	  IF_DEBUG(warn("aargh!\n"));
+      iset_clear(s);
+      Safefree(s);
+      
+
+

@@ -1,6 +1,6 @@
 use Set::Object;
 
-require 'Person.pm';
+require 't/Person.pm';
 package Person;
 
 print "1..8\n";
@@ -14,30 +14,30 @@ print 'not' unless $Person::n == 3;
 print "ok 1\n";
 
 $simpsons->insert();
-print 'not' unless $Person::n == 3;
+print 'not ' unless $Person::n == 3;
 print "ok 2\n";
 
 $simpsons->insert($homer = new Person( firstname => 'Homer', name => 'Simpson' ));
-print 'not' unless $Person::n == 4;
+print 'not ' unless $Person::n == 4;
 print "ok 3\n";
 
 $simpsons->remove($homer);
-print 'not' unless $Person::n == 4;
+print 'not ' unless $Person::n == 4;
 print "ok 4\n";
 
 undef $homer;
-print 'not' unless $Person::n == 3;
+print 'not ' unless $Person::n == 3;
 print "ok 5\n";
 
-undef $simpsons;
-print 'not' if $Person::n;
+$simpsons = undef;
+print 'not ' if $Person::n;
 print "ok 6\n";
 
 my $n = 100;
 my $big = Set::Object->new( map { Person->new } 1..$n );
-print 'not' if $Person::n != $n;
+print 'not ' if $Person::n != $n;
 print "ok 7\n";
 
-undef $big;
-print 'not' if $Person::n;
+$big->clear();
+print 'not ' if $Person::n;
 print "ok 8\n";
