@@ -242,19 +242,23 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key );
-$VERSION = '1.08';
+$VERSION = '1.08_01';
 
 bootstrap Set::Object $VERSION;
 
 # Preloaded methods go here.
 
+our $cust_disp;
+
 sub as_string
 {
+    return $cust_disp->(@_) if $cust_disp;
     my $self = shift;
     croak "Tried to use as_string on something other than a Set::Object"
 	unless (UNIVERSAL::isa($self, __PACKAGE__));
 
-   'Set::Object(' . (join ' ', $self->members) . ')'
+   'Set::Object(' . (join ' ', sort { $a cmp $b }
+		     $self->members) . ')'
 }
 
 sub equal
@@ -272,18 +276,34 @@ sub not_equal
 
 sub union
 {
-   Set::Object->new( map { $_->members() }
-		     grep { UNIVERSAL::isa($_, __PACKAGE__) }
-		     @_ )
+    my $set = Set::Object->new
+	( map { $_->members() }
+	  grep { UNIVERSAL::isa($_, __PACKAGE__) }
+	  @_ );
+
+    $set->unimerge($_) foreach 
+	  grep { UNIVERSAL::isa($_, __PACKAGE__) }
+	      @_;
+
+    $set;
 }
 
 sub op_union
 {
-    croak("Tried to form union between Set::Object & "
-	  .(ref($_[1])||$_[1]))
-	unless UNIVERSAL::isa($_[1], __PACKAGE__);
+    my $self = shift;
+    my $other;
+    if (ref $_[0]) {
+	$other = shift;
+    } else {
+	$other = __PACKAGE__->new(shift);
+    }
 
-    Set::Object->new( shift->members(), shift->members() )
+    croak("Tried to form union between Set::Object & "
+	  ."`$other'")
+	if ref $other and not UNIVERSAL::isa($other, __PACKAGE__);
+
+    $self->union($other);
+
 }
 
 sub intersection
@@ -291,36 +311,92 @@ sub intersection
    my $s = shift;
    return Set::Object->new() unless $s;
 
-   my @r = $s->members;
+   my $rem = __PACKAGE__->new($s->members);
+   $rem->unimerge($s);
 
-   while (@r && ($s = shift))
+   while ($s = shift)
    {
+       if (!ref $s) {
+	   $s = __PACKAGE__->new($s);
+       }
+
        croak("Tried to form intersection between Set::Object & "
 	     .(ref($s)||$s)) unless UNIVERSAL::isa($s, __PACKAGE__);
 
-       @r = grep { $s->includes( $_ ) } @r;
+       $rem->unimerge($s);
+       $rem->remove(grep { !$s->includes($_) } $rem->members);
    }
 
-   Set::Object->new( @r );
+   $rem;
 }
 
 sub op_intersection
 {
-    goto &intersection;
+    my $s1 = shift;
+    my $s2;
+    if (ref $_[0]) {
+	$s2 = shift;
+    } else {
+	$s2 = __PACKAGE__->new(shift);
+    }
+    my $r = shift;
+    if ( $r ) {
+	return intersection($s2, $s1);
+    } else {
+	return intersection($s1, $s2);
+    }
+
 }
 
 sub difference
 {
    my ($s1, $s2, $r) = @_;
+   if ( ! ref $s2 ) {
+       if ( is_int($s2) and !is_string($s2) and $s2 == 0 ) {
+	   my $rv = $s1->union;
+	   $rv->_complement;
+	   return $rv;
+       } else {
+	   my $set = __PACKAGE__->new($s2);
+	   $s2 = $set;
+       }
+   }
    croak("Tried to find difference between Set::Object & "
 	 .(ref($s2)||$s2)) unless UNIVERSAL::isa($s2, __PACKAGE__);
 
-   # this version has been known to segfault, if you comment out this line:
-   Set::Object->new( grep { !$s2->includes($_) } $s1->members );
-   # and uncomment these two lines, it will probably go away:
-   #my @a = grep { !$s2->includes($_) } $s1->members;
-   #Set::Object->new( @a );
+   my $s;
+   if ( $r ) {
+       $s = Set::Object->new( grep { !$s1->includes($_) } $s2->members );
+   } else {
+       $s = Set::Object->new( grep { !$s2->includes($_) } $s1->members );
+   }
+   $s->unimerge($s1);
+   $s->unimerge($s2);
+   $s;
 }
+
+sub op_invert
+{
+    my $self = shift;
+    my $other;
+    if (ref $_[0]) {
+	$other = shift;
+    } else {
+	$other = __PACKAGE__->new(shift);
+    }
+
+    croak("Tried to form union between Set::Object & "
+	  ."`$other'")
+	if ref $other and not UNIVERSAL::isa($other, __PACKAGE__);
+
+    my $result = Set::Object->new( $self->members() );
+    $result->invert( $other->members() );
+    $result->unimerge($self);
+    $result->unimerge($other);
+    return $result;
+
+}
+
 
 sub symmetric_difference
 {
@@ -370,13 +446,15 @@ use overload
    '+'   =>		\&op_union,
    '*'   =>		\&op_intersection,
    '%'   =>		\&symmetric_difference,
+   '/'   =>		\&op_invert,
    '-'   =>		\&difference,
    '=='  =>		\&equal,
    '!='  =>		\&not_equal,
    '<'   =>		\&proper_subset,
    '>'   =>		\&proper_superset,
    '<='  =>		\&subset,
-   '>='  =>		\&superset
+   '>='  =>		\&superset,
+    fallback => 1,
    ;
 
 # Autoload methods go after =cut, and are processed by the autosplit program.
@@ -451,6 +529,176 @@ sub STORABLE_thaw {
     goto &_STORABLE_thaw;
     #print "Got here\n";
 }
+
+sub delete {
+    my $self = shift;
+    return $self->remove(@_);
+}
+
+our $AUTOLOAD;
+sub AUTOLOAD {
+    croak "No such method $AUTOLOAD";
+}
+
+sub universe {
+    my $self = shift;
+    if ( wantarray ) {
+	return $self->_universe;
+    } else {
+	return $self->clone(1);
+    }
+}
+
+sub clone {
+    my $self = shift;
+    my $full = shift;
+    my $clone = __PACKAGE__->new($self->universe);
+    unless ( $full ) {
+	$clone->clear;
+	$clone->insert($self->members);
+    }
+    $clone;
+}
+
+# suck in the universe of another set
+sub unimerge {
+    my $self = shift;
+    my $other = shift or die;
+    my ($flat, $outer) = $self->_;
+
+    for my $x ( $other->universe ) {
+	next if ref $x;
+	exists $flat->{$x} or
+	    exists $outer->{$x} or
+		$outer->{$x} = $x;
+    }
+}
+
+sub insert_blanks {
+    my $self = shift;
+    my ($flat, $outer) = $self->_;
+    while ( my $thingy = shift ) {
+	if ( ref $thingy ) {
+	    next;
+	} else {
+	    $outer->{$thingy} = $thingy
+		unless exists $flat->{$thingy};
+	}
+    }
+}
+
+sub _fill {
+    my $self = shift;
+    my ($flat, $outer) = $self->_;
+
+    while ( my ($key, $v) = each %$outer ) {
+	$flat->{$key} = $key;
+	delete $outer->{$key};
+    }
+}
+
+sub invert {
+    my $self = shift;
+    while ( @_ ) {
+	my $sv = shift;
+	defined $sv or next;
+	#print STDERR "Hello (sv=$sv)!\n";
+	if ( $self->includes($sv) ) {
+	    #print STDERR "There (it's already there)!\n";
+	    $self->remove($sv);
+	    #print STDERR "There\n";
+	} else {
+	    #print STDERR "Dude (it's not already there)!\n";
+	    $self->insert($sv);
+	    #print STDERR "Dude\n";
+	}
+	#print STDERR "Alright (done invert)!\n";
+    }
+}
+
+sub compare {
+    my $self = shift;
+    my $other = shift;
+
+    return "apples, oranges" unless UNIVERSAL::isa($other, __PACKAGE__);
+
+    my $only_self = $self - $other;
+    my $only_other = $other - $self;
+    my $intersect = $self * $other;
+
+    if ( $intersect->size ) {
+	if ( $only_self->size ) {
+	    if ( $only_other->size ) {
+		return "proper intersect";
+	    } else {
+		return "proper subset";
+	    }
+	} else {
+	    if ( $only_other->size ) {
+		return "proper superset";
+	    } else {
+		return "equal";
+	    }
+	}
+    } else {
+	return "disjoint";
+    }
+}
+
+sub is_disjoint {
+    my $self = shift;
+    my $other = shift;
+
+    return "apples, oranges" unless UNIVERSAL::isa($other, __PACKAGE__);
+    return !($self*$other)->size;
+}
+
+use Data::Dumper;
+sub as_string_callback {
+    shift;
+    if ( @_ ) {
+	$cust_disp = shift;
+	if ( $cust_disp &&
+	     $cust_disp == \&as_string ) {
+	    undef($cust_disp);
+	}
+    } else {
+	\&as_string;
+    }
+}
+
+sub elements {
+    my $self = shift;
+    return $self->members(@_);
+}
+
+sub has { (shift)->includes(@_) }
+sub contains { (shift)->includes(@_) }
+
+sub _outer_members {
+    my ($flat, $outer) = (shift)->_;
+
+    values %$outer;
+}
+
+sub _universe {
+    my $self = shift;
+    if ( wantarray ) {
+	return ($self->members,
+		$self->_outer_members);
+    } else {
+	return __PACKAGE__->new($self->members,
+				$self->_outer_members);
+    }
+}
+
+sub null {
+    my $self = shift;
+    my $null = $self->_universe;
+    $null->clear;
+    $null;
+}
+
 1;
 
 __END__

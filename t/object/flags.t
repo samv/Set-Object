@@ -8,8 +8,8 @@ use strict;
 
 use Set::Object;
 
-require 't/Person.pm';
-require 't/Saint.pm';
+require 't/object/Person.pm';
+require 't/object/Saint.pm';
 
 print "1..2\n";
 

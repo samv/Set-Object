@@ -2,7 +2,7 @@
 
 use Set::Object;
 
-require 't/Person.pm';
+require 't/object/Person.pm';
 package Person;
 use Test::More tests => 18;
 
@@ -28,12 +28,14 @@ $simpsons->insert($maggie, $homer, $bart, $marge, $bart, $lisa, $lisa, $maggie);
 is($simpsons->size(), 5, "Set::Object->size() [ lots of inserts ]");
 
 # Now be really abusive
-eval { $simpsons->insert("bogon") };
-like($@, qr/Tried to insert/i, "Caught feeding in a bogon OK");
-
+#eval { $simpsons->insert("bogon") };
+#like($@, qr/Tried to insert/i, "Caught feeding in a bogon OK");
+#
 my $test = new Set::Object;
 eval { $test->insert("bogon"); };
-is ( $test."", "Set::Object()", "as_string on bogon-ified set");
+is ( $test."", "Set::Object(bogon)", "as_string on bogon-ified set");
+
+eval { $simpsons->remove("bogon"); };
 
 # array refs
 my $array;
@@ -41,8 +43,9 @@ $test->insert($array = [ "array", "ref" ]);
 my $array2 = [ "array", "ref" ];
 
 $test->insert($array);
-is ($test->size(), 1, "Inserted an array OK");
+is ($test->size(), 2, "Inserted an array OK");
 ok ($test->includes($array), "Can put non-objects in a set");
+ok ($test->includes("bogon"), "Can put scalars in a set");
 ok (!$test->includes($array2), "Lookup of identical item doesn't work");
 
 like ( $test."", qr/Set::Object\(ARRAY/, "Inserted an array OK");
