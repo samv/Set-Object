@@ -1,6 +1,12 @@
 
 package Person;
 
+use overload
+	'""' => 'stringify',
+	'==' => 'equals',
+	'!=' => 'notequals',
+	fallback => 1;
+
 sub new
 {
    ++$n;
@@ -63,6 +69,26 @@ sub same
    my @l2 = sort { $a->{firstname} cmp $b->{firstname} } @$l2;
    foreach (@l1) { return 'not ' unless $_ eq shift @l2 }
    '';
+}
+
+sub stringify
+{
+   my $self = shift;
+
+   return "$self->{firstname} $self->{name}";
+}
+
+sub equals
+{
+   my $a = shift;
+   my $b = shift;
+
+   return ( $a->{firstname} eq $b->{firstname} &&
+   	         $a->{name} eq $b->{name}         )
+}
+
+sub notequals {
+    !equals(@_);
 }
 
 1;

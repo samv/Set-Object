@@ -17,3 +17,5 @@ Revision history for Perl extension Set::Object.
 1.02 8 May 08 2000
 	- fixed bug that miscomputed new bucket while reindexing
 
+1.03 24 Jan 2003
+	- fixed overload related bug

@@ -395,6 +395,7 @@ members(self)
             if (*el_iter)
 			{
 				SV* el = newRV(*el_iter);
+				sv_bless(el, SvSTASH(*el_iter));
 				sv_2mortal(el);
                	PUSHs(el);
 			}
