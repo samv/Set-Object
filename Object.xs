@@ -350,4 +350,4 @@ clear(self)
          *bucket_iter = &sv_undef;
       }
 
-      s->iset_elems = 0;
+      s->iset_elems = 0;
