@@ -1,6 +1,6 @@
 use Set::Object;
 
-require 't/Person.pm';
+require 't/object/Person.pm';
 package Person;
 
 populate();

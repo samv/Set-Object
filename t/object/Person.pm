@@ -12,6 +12,8 @@ sub new
    ++$n;
    my $type = shift;
    my $self = bless { @_ }, $type;
+   $self->{firstname} ||= "";
+   $self->{name} ||= "";
    return $self;
 }
 

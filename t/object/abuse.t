@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 21;
+use Test::More tests => 20;
 use Set::Object;
 
 my @objects = ( bless([], "Bob"),
@@ -23,8 +23,9 @@ is($set->not_equal(["pocketknife"]), 1, "not_equal method");
 
 ok(( $set->union([ "carborettor" ]) == $set), "union method");
 
-eval{ my $x = $set + "carborettor" };
-like($@, qr/Tried to form union.*carborettor/, "+ operator");
+# no longer abuse...
+#eval{ my $x = $set + "carborettor" };
+#like($@, qr/Tried to form union.*carborettor/, "+ operator");
 
 eval { my $x = $set * [ "octarine" ] };
 like($@, qr/Tried to .*intersection.*ARRAY/, "* operator");

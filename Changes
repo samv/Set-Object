@@ -66,3 +66,12 @@ Revision history for Perl extension Set::Object.
 	  segfault when taking a difference between sets of exactly
 	  31 and 0 size.  Same root fault as the previous bug, this
 	  time I have a test case for it, too.
+
+1.08_01 12 Jan 2005
+	- First attempt at adding support for scalars.  This version
+	  tries to work as closely to Set::Scalar as possible.
+
+	  This approach will not be continued unless there are a lot
+	  of requests for it to be implemented.  I think it's overly
+	  complicated, and not what people expect when they want a
+	  Set.
