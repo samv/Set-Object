@@ -55,3 +55,8 @@ Revision history for Perl extension Set::Object.
 1.06 1 May 2004
 	- Fixed segfault when attempting to remove items from an empty
 	  set (fix from Richard Sterling Cox)
+
+1.07 16 Aug 2004
+	- yet another segfault fix, this time due to incorrect use of
+	  PUSHs vs XPUSHs.  There is no test case for this bug
+	  unfortunately.

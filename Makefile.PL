@@ -3,7 +3,7 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     'NAME'	=> 'Set::Object',
-    'VERSION_FROM' => 'Object.pm', # finds $VERSION
+    'VERSION_FROM' => 'lib/Set/Object.pm', # finds $VERSION
     'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
     'LIBS'	=> [''],   # e.g., '-lm' 
     'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 

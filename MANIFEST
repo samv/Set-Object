@@ -2,7 +2,7 @@ Changes
 Makefile.PL
 MANIFEST
 README
-Object.pm
+lib/Set/Object.pm
 Object.xs
 t/equal.t
 t/clear.t
