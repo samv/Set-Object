@@ -181,7 +181,7 @@ require AutoLoader;
 @EXPORT = qw(
 
 );
-$VERSION = '0.003';
+$VERSION = '1.00';
 
 bootstrap Set::Object $VERSION;
 

@@ -1,6 +1,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define PERL_POLLUTE
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
