@@ -1,14 +1,14 @@
-use aliased 'Set::Object' => 'Set::Scalar';
 
+use Set::Object;
 use strict;
 
-my $t = Set::Scalar->new(qw(a b c));
-my $u = Set::Scalar->new(qw(a b c));
-my $v = Set::Scalar->new(qw(d e f));
-my $w = Set::Scalar->new(qw(a b));
-my $x = Set::Scalar->new(qw(b c d));
-my $n = Set::Scalar->new(qw());
-my $o = Set::Scalar->new(qw());
+my $t = Set::Object->new(qw(a b c));
+my $u = Set::Object->new(qw(a b c));
+my $v = Set::Object->new(qw(d e f));
+my $w = Set::Object->new(qw(a b));
+my $x = Set::Object->new(qw(b c d));
+my $n = Set::Object->new(qw());
+my $o = Set::Object->new(qw());
 
 print "1..23\n";
 

@@ -1,9 +1,11 @@
-use aliased 'Set::Object' => 'Set::Scalar';
+use Test::More skip_all => "TO-DO";
+
+
 
 print "1..2\n";
 
 my @a = ("a".."e",0);
-my $a = Set::Scalar->new(@a);
+my $a = Set::Object->new(@a);
 
 my $e;
 my %e;

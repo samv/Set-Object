@@ -31,6 +31,7 @@ is($simpsons->size(), 5, "Set::Object->size() [ lots of inserts ]");
 #eval { $simpsons->insert("bogon") };
 #like($@, qr/Tried to insert/i, "Caught feeding in a bogon OK");
 #
+
 my $test = new Set::Object;
 eval { $test->insert("bogon"); };
 is ( $test."", "Set::Object(bogon)", "as_string on bogon-ified set");

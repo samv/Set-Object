@@ -1,43 +1,111 @@
 
 =head1 NAME
 
-Set::Object - set of objects
+Set::Object - set of objects and strings
 
 =head1 SYNOPSIS
 
   use Set::Object;
   $set = Set::Object->new();
 
+  $set->insert(@thingies);
+  $set->remove(@thingies);
+
+  @items = $set->elements;
+
+  $union = $set1 + $set2;
+  $intersection = $set1 * $set2;
+  $difference = $set1 - $set2;
+  $symmetric_difference = $set1 % $set2;
+
+  print "set1 is a proper subset of set2"
+      if $set1 < $set2;
+
+  print "set1 is a subset of set2"
+      if $set1 <= $set2;
+
+  # common idiom - iterate over any pure Perl structure
+  use Set::Object qw(reftype);
+  my @stack = $root;
+  my $seen = Set::Object->new(@stack);
+  while (my $object = pop @stack) {
+      if (reftype $object eq "HASH") {
+          # do something with hash members
+
+          # add the new nodes to the stack
+          push @stack, grep { ref $_ && $seen->insert($_) }
+              values %$object;
+      }
+      elsif (reftype $object eq "ARRAY") {
+          # do something with array members
+
+          # add the new nodes to the stack
+          push @stack, grep { ref $_ && $seen->insert($_) }
+              @$object;
+
+      }
+      elsif (reftype $object =~ /SCALAR|REF/) {
+          push @stack, $$object
+              if ref $$object && $seen->insert($$object);
+      }
+  }
+
 =head1 DESCRIPTION
 
 This modules implements a set of objects, that is, an unordered
 collection of objects without duplication.
+
+The term I<objects> is applied loosely - for the sake of
+L<Set::Object>, anything that is a reference is considered an object.
+
+L<Set::Object> 1.09 and later includes support for inserting scalars
+(including the empty string, but excluding C<undef>) as well as
+objects.  This can be thought of as (and is currently implemented as)
+a degenerate hash that only has keys and no values.  Unlike objects
+placed into a Set::Object, scalars that are inserted will be flattened
+into strings, so will lose any magic (eg, tie) or other special bits
+that they went in with; only strings come out.
 
 =head1 CLASS METHODS
 
 =head2 new( [I<list>] )
 
 Return a new C<Set::Object> containing the elements passed in I<list>.
-The elements must be objects.
 
 =head1 INSTANCE METHODS
 
 =head2 insert( [I<list>] )
 
-Add objects to the C<Set::Object>.
-Adding the same object several times is not an error,
-but any C<Set::Object> will contain at most one occurence of the
-same object.
+Add items to the C<Set::Object>.
+
+Adding the same object several times is not an error, but any
+C<Set::Object> will contain at most one occurence of the same object.
+
 Returns the number of elements that were actually added.
 
 =head2 includes( [I<list>] )
 
-Return C<true> if all the objects in I<list> are members of the C<Set::Object>.
-I<list> may be empty, in which case C<true> is returned.
+=head2 has( [I<list>] )
+
+=head2 contains( [I<list>] )
+
+Return C<true> if B<all> the objects in I<list> are members of the
+C<Set::Object>.  I<list> may be empty, in which case C<true> is
+always returned.
+
+=head2 member( [I<item>] )
+
+=head2 element( [I<item>] )
+
+Like C<includes>, but takes a single item to check and returns that
+item if the value is found, rather than just a true value.
 
 =head2 members
 
-Return the objects contained in the C<Set::Object>.
+=head2 elements
+
+Return the objects contained in the C<Set::Object> in random (hash)
+order.
 
 =head2 size
 
@@ -45,10 +113,23 @@ Return the number of elements in the C<Set::Object>.
 
 =head2 remove( [I<list>] )
 
+=head2 delete( [I<list>] )
+
 Remove objects from a C<Set::Object>.
-Removing the same object more than once, or removing an object
-absent from the C<Set::Object> is not an error.
+
+Removing the same object more than once, or removing an object absent
+from the C<Set::Object> is not an error.
+
 Returns the number of elements that were actually removed.
+
+=head2 invert( [I<list>] )
+
+For each item in I<list>, it either removes it or adds it to the set,
+so that a change is always made.
+
+Also available as the overloaded operator C</>, in which case it
+expects another set (or a single scalar element), and returns a new
+set that is the original set with all the second set's items inverted.
 
 =head2 clear
 
@@ -61,35 +142,83 @@ Also available as overloaded operator "".
 
 =head2 intersection( [I<list>] )
 
-Return a new C<Set::Object> containing the intersection of the 
+Return a new C<Set::Object> containing the intersection of the
 C<Set::Object>s passed as arguments.
-Also available as overloaded operator *.
+
+Also available as overloaded operator C<*>.
 
 =head2 union( [I<list>] )
 
-Return a new C<Set::Object> containing the union of the 
+Return a new C<Set::Object> containing the union of the
 C<Set::Object>s passed as arguments.
-Also available as overloaded operator +.
+
+Also available as overloaded operator C<+>.
+
+=head2 difference ( I<set> )
+
+Return a new C<Set::Object> containing the members of the first
+(invocant) set with the passed C<Set::Object>s' elements removed.
+
+Also available as overloaded operator C<->.
+
+=head2 unique ( I<set> )
+
+=head2 symmetric_difference ( I<set> )
+
+Return a new C<Set::Object> containing the members of all passed sets
+(including the invocant), with common elements removed.  This will be
+the opposite (complement) of the I<intersection> of the two sets.
+
+Also available as overloaded operator C<%>.
 
 =head2 subset( I<set> )
 
 Return C<true> if this C<Set::Object> is a subset of I<set>.
-Also available as operator <=.
+
+Also available as operator C<E<lt>=>.
 
 =head2 proper_subset( I<set> )
 
 Return C<true> if this C<Set::Object> is a proper subset of I<set>
-Also available as operator <.
+Also available as operator C<E<lt>>.
 
 =head2 superset( I<set> )
 
 Return C<true> if this C<Set::Object> is a superset of I<set>.
-Also available as operator >=.
+Also available as operator C<E<gt>=>.
 
 =head2 proper_superset( I<set> )
 
 Return C<true> if this C<Set::Object> is a proper superset of I<set>
-Also available as operator >.
+Also available as operator C<E<gt>>.
+
+=head1 Set::Scalar compatibility methods
+
+By and large, L<Set::Object> is not and probably never will be
+feature-compatible with L<Set::Scalar>; however the following
+functions are provided anyway.
+
+=head2 compare( I<set> )
+
+returns one of:
+
+  "proper intersect"
+  "proper subset"
+  "proper superset"
+  "equal"
+  "disjoint"
+
+=head2 is_disjoint( I<set> )
+
+Returns a true value if the two sets have no common items.
+
+=head2 as_string_callback( I<set> )
+
+Allows you to define a custom stringify function.  This is only a
+class method.  If you want anything fancier than this, you should
+sub-class Set::Object.
+
+
 
 =head1 FUNCTIONS
 
@@ -97,6 +226,9 @@ The following functions are defined by the Set::Object XS code for
 convenience; they are largely identical to the versions in the
 Scalar::Util module, but there are a couple that provide functions not
 catered to by that module.
+
+Please use the versions in L<Scalar::Util> in preference to these
+functions.
 
 =over
 
@@ -136,7 +268,7 @@ A quick way to check if an object has overload magic on it.
 This function returns true, if the value it is passed looks like it
 I<already is> a representation of an I<integer>.  This is so that you
 can decide whether the value passed is a hash key or an array
-index... <devious grin>.
+index.
 
 =item B<is_key>
 
@@ -145,28 +277,18 @@ an I<index> to a collection than a I<value> of a collection.
 
 But wait, you say - Set::Object has no indices, one of the fundamental
 properties of a Set is that it is an I<unordered collection>.  Which
-means I<no indices>.  Stay tuned for the answer.
+means I<no indices>.  Well, if this module were ever to be derived to
+be a more general multi-purpose collection, then this (and C<ish_int>)
+might be a good function to use to distinguish different types of
+indexes from values.
 
 =back
-
-=head1 INSTALLATION
-
-This module is partly written in C, so you'll need a C compiler to
-install it.  Use the familiar sequence:
-
-   perl Makefile.PL
-   make
-   make test
-   make install
-
-This module was developed on Windows NT 4.0, using the Visual C++
-compiler with Service Pack 2. It was also tested on AIX using IBM's
-xlc compiler.
 
 =head1 PERFORMANCE
 
 The following benchmark compares C<Set::Object> with using a hash to
-emulate a set-like collection:
+emulate a set-like collection (this is an old benchmark, but still
+holds true):
 
    use Set::Object;
 
@@ -209,19 +331,19 @@ On my computer the results are:
 
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
+Crack-fueled enhancements courtesy of Sam Vilain, <samv@cpan.org>
+
 =head1 LICENCE
 
 Copyright (c) 1998-1999, Jean-Louis Leroy. All Rights Reserved.
 This module is free software. It may be used, redistributed
 and/or modified under the terms of the Perl Artistic License
 
-Portions Copyright (c) 2003, Sam Vilain.  All Rights Reserved.
-This module is free software. It may be used, redistributed
-and/or modified under the terms of the Perl Artistic License
+Portions Copyright (c) 2003 - 2005, Sam Vilain.  Same license.
 
 =head1 SEE ALSO
 
-perl(1), perltie(1), overload.pm
+perl(1), perltie(1), L<Set::Scalar>, overload.pm
 
 =cut
 
@@ -242,7 +364,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key );
-$VERSION = '1.08_01';
+$VERSION = '1.08_02';
 
 bootstrap Set::Object $VERSION;
 
@@ -276,16 +398,10 @@ sub not_equal
 
 sub union
 {
-    my $set = Set::Object->new
-	( map { $_->members() }
-	  grep { UNIVERSAL::isa($_, __PACKAGE__) }
-	  @_ );
-
-    $set->unimerge($_) foreach 
-	  grep { UNIVERSAL::isa($_, __PACKAGE__) }
-	      @_;
-
-    $set;
+    Set::Object->new
+	    ( map { $_->members() }
+	      grep { UNIVERSAL::isa($_, __PACKAGE__) }
+	      @_ );
 }
 
 sub op_union
@@ -312,7 +428,6 @@ sub intersection
    return Set::Object->new() unless $s;
 
    my $rem = __PACKAGE__->new($s->members);
-   $rem->unimerge($s);
 
    while ($s = shift)
    {
@@ -323,7 +438,6 @@ sub intersection
        croak("Tried to form intersection between Set::Object & "
 	     .(ref($s)||$s)) unless UNIVERSAL::isa($s, __PACKAGE__);
 
-       $rem->unimerge($s);
        $rem->remove(grep { !$s->includes($_) } $rem->members);
    }
 
@@ -353,9 +467,7 @@ sub difference
    my ($s1, $s2, $r) = @_;
    if ( ! ref $s2 ) {
        if ( is_int($s2) and !is_string($s2) and $s2 == 0 ) {
-	   my $rv = $s1->union;
-	   $rv->_complement;
-	   return $rv;
+	   return __PACKAGE__->new();
        } else {
 	   my $set = __PACKAGE__->new($s2);
 	   $s2 = $set;
@@ -370,8 +482,6 @@ sub difference
    } else {
        $s = Set::Object->new( grep { !$s2->includes($_) } $s1->members );
    }
-   $s->unimerge($s1);
-   $s->unimerge($s2);
    $s;
 }
 
@@ -391,12 +501,26 @@ sub op_invert
 
     my $result = Set::Object->new( $self->members() );
     $result->invert( $other->members() );
-    $result->unimerge($self);
-    $result->unimerge($other);
     return $result;
 
 }
 
+sub op_symm_diff
+{
+    my $self = shift;
+    my $other;
+    if (ref $_[0]) {
+	$other = shift;
+    } else {
+	$other = __PACKAGE__->new(shift);
+    }
+    return $self->symmetric_difference($other);
+}
+
+sub unique {
+    my $self = shift;
+    $self->symmetric_difference(@_);
+}
 
 sub symmetric_difference
 {
@@ -445,7 +569,7 @@ use overload
    '""'  =>		\&as_string,
    '+'   =>		\&op_union,
    '*'   =>		\&op_intersection,
-   '%'   =>		\&symmetric_difference,
+   '%'   =>		\&op_symm_diff,
    '/'   =>		\&op_invert,
    '-'   =>		\&difference,
    '=='  =>		\&equal,
@@ -540,79 +664,16 @@ sub AUTOLOAD {
     croak "No such method $AUTOLOAD";
 }
 
-sub universe {
-    my $self = shift;
-    if ( wantarray ) {
-	return $self->_universe;
-    } else {
-	return $self->clone(1);
-    }
-}
-
-sub clone {
-    my $self = shift;
-    my $full = shift;
-    my $clone = __PACKAGE__->new($self->universe);
-    unless ( $full ) {
-	$clone->clear;
-	$clone->insert($self->members);
-    }
-    $clone;
-}
-
-# suck in the universe of another set
-sub unimerge {
-    my $self = shift;
-    my $other = shift or die;
-    my ($flat, $outer) = $self->_;
-
-    for my $x ( $other->universe ) {
-	next if ref $x;
-	exists $flat->{$x} or
-	    exists $outer->{$x} or
-		$outer->{$x} = $x;
-    }
-}
-
-sub insert_blanks {
-    my $self = shift;
-    my ($flat, $outer) = $self->_;
-    while ( my $thingy = shift ) {
-	if ( ref $thingy ) {
-	    next;
-	} else {
-	    $outer->{$thingy} = $thingy
-		unless exists $flat->{$thingy};
-	}
-    }
-}
-
-sub _fill {
-    my $self = shift;
-    my ($flat, $outer) = $self->_;
-
-    while ( my ($key, $v) = each %$outer ) {
-	$flat->{$key} = $key;
-	delete $outer->{$key};
-    }
-}
-
 sub invert {
     my $self = shift;
     while ( @_ ) {
 	my $sv = shift;
 	defined $sv or next;
-	#print STDERR "Hello (sv=$sv)!\n";
 	if ( $self->includes($sv) ) {
-	    #print STDERR "There (it's already there)!\n";
 	    $self->remove($sv);
-	    #print STDERR "There\n";
 	} else {
-	    #print STDERR "Dude (it's not already there)!\n";
 	    $self->insert($sv);
-	    #print STDERR "Dude\n";
 	}
-	#print STDERR "Alright (done invert)!\n";
     }
 }
 
@@ -674,29 +735,12 @@ sub elements {
 
 sub has { (shift)->includes(@_) }
 sub contains { (shift)->includes(@_) }
-
-sub _outer_members {
-    my ($flat, $outer) = (shift)->_;
-
-    values %$outer;
-}
-
-sub _universe {
+sub element { (shift)->member(@_) }
+sub member {
     my $self = shift;
-    if ( wantarray ) {
-	return ($self->members,
-		$self->_outer_members);
-    } else {
-	return __PACKAGE__->new($self->members,
-				$self->_outer_members);
-    }
-}
-
-sub null {
-    my $self = shift;
-    my $null = $self->_universe;
-    $null->clear;
-    $null;
+    my $item = shift;
+    return ( $self->includes($item) ?
+	     $item : undef );
 }
 
 1;

@@ -1,5 +1,5 @@
-use aliased 'Set::Object' => 'Set::Scalar';
 
+use Set::Object;
 print "1..28\n";
 
 sub check {
@@ -11,8 +11,8 @@ sub check {
     }
 }
 
-my $a = Set::Scalar->new("a".."e");
-my $b = Set::Scalar->new("c".."g");
+my $a = Set::Object->new("a".."e");
+my $b = Set::Object->new("c".."g");
 
 my $d = $a->difference($b);
 
@@ -58,8 +58,8 @@ my $k = "e" - $a;
 check( 19, $k eq "Set::Object()" );
 check( 20, $a eq "Set::Object(a b c d e)" );
 
-my $m = Set::Scalar->new();
-my $n = Set::Scalar->new();
+my $m = Set::Object->new();
+my $n = Set::Object->new();
 my $o = $m - $n;
 
 check( 21, defined($m) && ref($m) && $m->isa("Set::Object") );

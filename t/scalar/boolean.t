@@ -1,12 +1,12 @@
-use aliased 'Set::Object' => 'Set::Scalar';
 
+use Set::Object;
 print "1..2\n";
 
 my @a = qw(One Two Three);     
 my @b = qw(Four Five Six);
  
-my $ssa = Set::Scalar->new(@a);
-my $ssb = Set::Scalar->new(@b);
+my $ssa = Set::Object->new(@a);
+my $ssb = Set::Object->new(@b);
  
 print "not " unless $ssa;
 print "ok 1\n";
