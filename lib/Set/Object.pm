@@ -6,12 +6,13 @@ Set::Object - set of objects and strings
 =head1 SYNOPSIS
 
   use Set::Object;
-  $set = Set::Object->new();
+
+  my $set = set();            # or Set::Object->new()
 
   $set->insert(@thingies);
   $set->remove(@thingies);
 
-  @items = $set->elements;
+  @items = @$set;             # or $set->members;
 
   $union = $set1 + $set2;
   $intersection = $set1 * $set2;
@@ -331,7 +332,8 @@ On my computer the results are:
 
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
-Crack-fueled enhancements courtesy of Sam Vilain, <samv@cpan.org>
+Set::Scalar compatibility, XS debugging and other maintainership
+courtesy of Sam Vilain, <samv@cpan.org>
 
 =head1 LICENCE
 
@@ -362,9 +364,10 @@ require AutoLoader;
 # names by default without a very good reason. Use EXPORT_OK instead.
 # Do not simply export all your public functions/methods/constants.
 
+@EXPORT = qw(set);
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key );
-$VERSION = '1.09';
+$VERSION = '1.10';
 
 bootstrap Set::Object $VERSION;
 
@@ -578,9 +581,172 @@ use overload
    '>'   =>		\&proper_superset,
    '<='  =>		\&subset,
    '>='  =>		\&superset,
+   '%{}'  =>		sub { my $self = shift;
+			      my %h = {};
+			      tie %h, $self->tie_hash_pkg, [], $self;
+			      \%h },
+   '@{}'  =>		sub { my $self = shift;
+			      my @h = {};
+			      tie @h, $self->tie_array_pkg, [], $self;
+			      \@h },
    'bool'  =>		sub { 1 },
     fallback => 1,
    ;
+
+sub tie_hash_pkg { "Set::Object::TieHash" };
+sub tie_array_pkg { "Set::Object::TieArray" };
+
+{ package Set::Object::TieArray;
+  sub TIEARRAY {
+      my $p = shift;
+      my $tie = bless [ @_ ], $p;
+      require Scalar::Util;
+      Scalar::Util::weaken($tie->[0]);
+      Scalar::Util::weaken($tie->[1]);
+      return $tie;
+  }
+  sub promote {
+      my $self = shift;
+      @{$self->[0]} = sort $self->[1]->members;
+      return $self->[0];
+  }
+  sub commit {
+      my $self = shift;
+      $self->[1]->clear;
+      $self->[1]->insert(@{$self->[0]});
+  }
+  sub FETCH {
+      my $self = shift;
+      my $index = shift;
+      $self->promote->[$index];
+  }
+  sub STORE {
+      my $self = shift;
+      my $index = shift;
+      $self->promote->[$index] = shift;
+      $self->commit;
+  }
+  sub FETCHSIZE {
+      my $self = shift;
+      return $self->[1]->size;
+  }
+  sub STORESIZE {
+      my $self = shift;
+      my $count = shift;
+      $#{$self->promote}=$count-1;
+      $self->commit;
+  }
+  sub EXTEND {
+  }
+  sub EXISTS {
+      my $self = shift;
+      my $index = shift;
+      if ( $index+1 > $self->[1]->size) {
+	  return undef;
+      } else {
+	  return 1;
+      }
+  }
+  sub DELETE {
+      my $self = shift;
+      delete $self->promote->[(shift)];
+      $self->commit;
+  }
+  sub PUSH {
+      my $self = shift;
+      $self->[1]->insert(@_);
+  }
+  sub POP {
+      my $self = shift;
+      my $rv = pop @{$self->promote};
+      $self->commit;
+      return $rv;
+  }
+  sub CLEAR {
+      my $self = shift;
+      $self->[1]->clear;
+  }
+  sub SHIFT {
+      my $self = shift;
+      my $rv = shift @{$self->promote};
+      $self->commit;
+      return $rv;
+  }
+  sub UNSHIFT {
+      my $self = shift;
+      $self->[1]->insert(@_);
+  }
+  sub SPLICE {
+      my $self = shift;
+      my @rv;
+      # perl5--
+      if ( @_ == 1 ) {
+	  splice @{$self->promote}, $_[0];
+      }
+      elsif ( @_ == 2 ) {
+	  splice @{$self->promote}, $_[0], $_[1];
+      }
+      else {
+	  splice @{$self->promote}, $_[0], $_[1], @_;
+      }
+      $self->commit;
+      @rv;
+  }
+}
+
+{ package Set::Object::TieHash;
+  sub TIEHASH {
+      my $p = shift;
+      my $tie = bless [ @_ ], $p;
+      require Scalar::Util;
+      Scalar::Util::weaken($tie->[0]);
+      Scalar::Util::weaken($tie->[1]);
+      return $tie;
+  }
+  sub FETCH {
+      my $self = shift;
+      return $self->[1]->includes(shift);
+  }
+  sub STORE {
+      my $self = shift;
+      my $item = shift;
+      if ( shift ) {
+	  $self->[1]->insert($item);
+      } else {
+	  $self->[1]->remove($item);
+      }
+  }
+  sub DELETE {
+      my $self = shift;
+      my $item = shift;
+      $self->[1]->remove($item);
+  }
+  sub CLEAR {
+      my $self = shift;
+      $self->[1]->clear;
+  }
+  sub EXISTS {
+      my $self = shift;
+      $self->[1]->includes(shift);
+  }
+  sub FIRSTKEY {
+      my $self = shift;
+      @{$self->[0]} = $self->[1]->members;
+      $self->NEXTKEY;
+  }
+  sub NEXTKEY {
+      my $self = shift;
+      if ( @{$self->[0]} ) {
+	  return (shift @{$self->[0]});
+      } else {
+	  return ();
+      }
+  }
+  sub SCALAR {
+      my $self = shift;
+      $self->[1]->size;
+  }
+}
 
 # Autoload methods go after =cut, and are processed by the autosplit program.
 # This function is used to differentiate between an integer and a
@@ -744,6 +910,9 @@ sub member {
 	     $item : undef );
 }
 
+sub set {
+    __PACKAGE__->new(@_);
+}
 1;
 
 __END__
