@@ -578,6 +578,7 @@ use overload
    '>'   =>		\&proper_superset,
    '<='  =>		\&subset,
    '>='  =>		\&superset,
+   'bool'  =>		sub { 1 },
     fallback => 1,
    ;
 

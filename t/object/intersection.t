@@ -31,3 +31,6 @@ print "ok 5\n";
 
 print 'not ' unless ($kids * Set::Object->new())->size == 0;
 print "ok 6\n";
+
+print "# size = ".($kids * Set::Object->new())->size."\n";
+
