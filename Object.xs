@@ -72,7 +72,7 @@ void iset_insert_one(ISET* s, SV* rv)
 
 	if (!SvROK(rv))
 	{
-	  Perl_croak(aTHX_ "Tried to insert non-reference in a Set::Object");
+	    Perl_croak(aTHX_ "Tried to insert a non-reference into a Set::Object");
 	};
 
 	el = SvRV(rv);
@@ -396,7 +396,7 @@ members(self)
       BUCKET* bucket_iter = s->bucket;
       BUCKET* bucket_last = bucket_iter + s->buckets;
 
-      EXTEND(sp, s->elems - 1);
+      EXTEND(sp, s->elems);
 
       for (; bucket_iter != bucket_last; ++bucket_iter)
       {
@@ -415,9 +415,9 @@ members(self)
 				if (SvOBJECT(*el_iter)) {
 				  sv_bless(el, SvSTASH(*el_iter));
 				}
-				sv_2mortal(el);
+				PUSHs(sv_2mortal(el));
 				//XPUSHs(el);
-				PUSHs(el);
+				//PUSHs(el);
 			}
       }
 

@@ -19,11 +19,6 @@ t/remove.t
 t/subsuper.t
 t/symmetric_difference.t
 t/union.t
-debian/README.Debian
-debian/changelog
-debian/control
-debian/copyright
-debian/rules
 META.yml                                Module meta-data (added by MakeMaker)
 t/abuse.t
 t/properties.t
