@@ -25,3 +25,6 @@ debian/control
 debian/copyright
 debian/rules
 META.yml                                Module meta-data (added by MakeMaker)
+t/abuse.t
+t/properties.t
+t/storable.t
