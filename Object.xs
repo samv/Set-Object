@@ -83,6 +83,7 @@ void iset_insert_one(AV* array, SV* el)
       {
          AV* bucket;
          SV **el_iter, **el_last, **el_out_iter;
+         I32 newfill;
 
          if (*bucket_iter == &sv_undef)
             continue;
@@ -95,7 +96,8 @@ void iset_insert_one(AV* array, SV* el)
 
          for (; el_iter != el_last; ++el_iter)
          {
-            SV* rv = SvRV(*el_iter);
+            SV* sv = *el_iter;
+            SV* rv = SvRV(sv);
             I32 hash = ISET_HASH(rv);
             I32 index = hash & newmax;
 
@@ -110,22 +112,24 @@ void iset_insert_one(AV* array, SV* el)
             if (*new_bucket == &sv_undef)
             {
                AV* pb = newAV();
-               av_push(pb, newRV_inc(rv));
+               av_push(pb, sv);
                av_store(array, new_bucket - bucket_first, newRV_noinc((SV*) pb));
             }
             else
             {
-               av_push((AV*) SvRV(*new_bucket), newRV_inc(rv));
+               av_push((AV*) SvRV(*new_bucket), sv);
             }
          
          }
-
-         AvFILL(bucket) = el_out_iter - AvARRAY(bucket) - 1;
+         
+         newfill = el_out_iter - AvARRAY(bucket) - 1;
 
          for (; el_out_iter != el_last; ++el_out_iter)
          {
             *el_out_iter = &sv_undef;
          }
+
+         av_fill(bucket, newfill);
       }
 
       s->iset_max = newmax;
@@ -202,6 +206,7 @@ remove(self, ...)
       {
          SV* el = ST(item);
          SV* rv = SvRV(el);
+         I32 newfill;
          hash = ISET_HASH(rv);
          index = hash & s->iset_max;
          ppb = av_fetch(array, index, 0);
@@ -213,7 +218,7 @@ remove(self, ...)
 
          el_iter = AvARRAY(bucket);
          el_out_iter = el_iter;
-         el_last = el_iter + AvFILL(bucket) + 1;
+         el_last = el_iter + av_len(bucket) + 1;
 
          for (; el_iter != el_last; ++el_iter)
          {
@@ -228,7 +233,14 @@ remove(self, ...)
             }
          }
          
-         AvFILL(bucket) = el_out_iter - AvARRAY(bucket) - 1;
+         newfill = el_out_iter - AvARRAY(bucket) - 1;
+
+         for (; el_out_iter != el_last; ++el_out_iter)
+         {
+            *el_out_iter = &sv_undef;
+         }
+
+         av_fill(bucket, newfill);
       }
 
       XSRETURN_IV(init_elems - s->iset_elems);
@@ -270,7 +282,7 @@ includes(self, ...)
          bucket = (AV*) SvRV(*ppb);
 
          el_iter = AvARRAY(bucket);
-         el_last = el_iter + AvFILL(bucket) + 1;
+         el_last = el_iter + av_len(bucket) + 1;
 
          for (; el_iter != el_last; ++el_iter)
             if (SvRV(*el_iter) == rv)

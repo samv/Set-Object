@@ -1,6 +1,7 @@
 Changes
 Makefile.PL
 MANIFEST
+README
 Object.pm
 Object.xs
 t/clear.t

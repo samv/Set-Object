@@ -3,7 +3,7 @@ use Set::Object;
 require 't/Person.pm';
 package Person;
 
-print "1..6\n";
+print "1..8\n";
 
 $simpsons = Set::Object->new(
    new Person( firstname => 'Bart', name => 'Simpson' ),
@@ -32,3 +32,12 @@ print "ok 5\n";
 undef $simpsons;
 print 'not' if $Person::n;
 print "ok 6\n";
+
+my $n = 100;
+my $big = Set::Object->new( map { Person->new } 1..$n );
+print 'not' if $Person::n != $n;
+print "ok 7\n";
+
+undef $big;
+print 'not' if $Person::n;
+print "ok 8\n";
