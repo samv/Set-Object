@@ -1,0 +1,17 @@
+Changes
+Makefile.PL
+MANIFEST
+Object.pm
+Object.xs
+t/clear.t
+t/difference.t
+t/includes.t
+t/insert.t
+t/intersection.t
+t/members.t
+t/Person.pm
+t/refcount.t
+t/remove.t
+t/subsuper.t
+t/symmetric_difference.t
+t/union.t
