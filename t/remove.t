@@ -9,6 +9,8 @@ $patty = $patty;
 $selma = $selma;
 $burns = $burns;
 
+Set::Object->new->remove($patty);
+
 $simpsons = Set::Object->new($homer, $marge, $bart, $lisa, $maggie);
 
 print "1..3\n";

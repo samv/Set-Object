@@ -1,8 +1,8 @@
-libset-object-perl (1.05-1) unstable; urgency=low
+libset-object-perl (1.06) unstable; urgency=low
 
-  * Custom package
+  * Fixed segfault with remove on empty sets
 
- -- Sam Vilain <sam@vilain.net>  Wed, 22 Oct 2003 00:06:47 +0100
+ -- Sam Vilain <sam@vilain.net>  Sat,  1 May 2004 19:38:09 +1200
 
 libset-object-perl (1.05) unstable; urgency=low
 

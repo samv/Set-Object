@@ -51,3 +51,7 @@ Revision history for Perl extension Set::Object.
 1.05 5 Jan 2004
 	- some segfault fixes with Storable and Perl 5.6.1 (Perl 5.8.1
 	  should be OK)
+
+1.06 1 May 2004
+	- Fixed segfault when attempting to remove items from an empty
+	  set (fix from Richard Sterling Cox)
