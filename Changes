@@ -75,3 +75,11 @@ Revision history for Perl extension Set::Object.
 	  of requests for it to be implemented.  I think it's overly
 	  complicated, and not what people expect when they want a
 	  Set.
+
+1.08_02 14 Jan 2005
+	- Cutting out the "Universe" representation
+	- Fixed docs
+
+1.09 26 Mar 2005
+	- added 'bool' overload operator to Set::Object.  For
+	  backwards compatibility, always returns true.

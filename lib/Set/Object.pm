@@ -364,7 +364,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key );
-$VERSION = '1.08_02';
+$VERSION = '1.09';
 
 bootstrap Set::Object $VERSION;
 
@@ -578,6 +578,7 @@ use overload
    '>'   =>		\&proper_superset,
    '<='  =>		\&subset,
    '>='  =>		\&superset,
+   'bool'  =>		sub { 1 },
     fallback => 1,
    ;
 
