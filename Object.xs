@@ -358,27 +358,6 @@ int inserted = 0;
       XSRETURN_IV(inserted);
   
 void
-_(self, ...)
-     SV* self;
-
-     CODE:
-      ISET* s = (ISET*) SvIV(SvRV(self));
-      SV* flat;
-
-      POPs;
-
-      if (!s->flat) {
-	IF_INSERT_DEBUG(warn("iset_internal(%x): creating hashes", s));
-	s->flat = newHV();
-      }
-
-      flat = newRV_inc(s->flat);
-	
-      SvREFCNT_inc(flat);
-      PUSHs(sv_2mortal(flat));
-      XSRETURN(1);
-     
-void
 remove(self, ...)
    SV* self;
 

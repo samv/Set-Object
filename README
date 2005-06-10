@@ -3,12 +3,13 @@ NAME
 
 SYNOPSIS
       use Set::Object;
-      $set = Set::Object->new();
+
+      my $set = set();            # or Set::Object->new()
 
       $set->insert(@thingies);
       $set->remove(@thingies);
 
-      @items = $set->elements;
+      @items = @$set;             # or $set->members;
 
       $union = $set1 + $set2;
       $intersection = $set1 * $set2;
@@ -280,7 +281,8 @@ PERFORMANCE
 AUTHOR
     Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
-    Crack-fueled enhancements courtesy of Sam Vilain, <samv@cpan.org>
+    Set::Scalar compatibility, XS debugging and other maintainership
+    courtesy of Sam Vilain, <samv@cpan.org>
 
 LICENCE
     Copyright (c) 1998-1999, Jean-Louis Leroy. All Rights Reserved. This

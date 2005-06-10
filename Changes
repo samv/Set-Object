@@ -86,3 +86,8 @@ Revision history for Perl extension Set::Object.
 
 1.10  2 Apr 2005
 	- added 'set()' constructor and use-as-array-ref interface
+
+1.11 27 Apr 2005
+	- removed debugging &_ func (was causing strange errors on
+	  5.9.1)
+
