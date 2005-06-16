@@ -9,6 +9,10 @@ extern "C" {
 }
 #endif
 
+#if PERL_VERSION < 8
+#include "ppport.h"
+#endif
+
 // for debugging object-related functions
 #define IF_DEBUG(e)
 
@@ -316,7 +320,7 @@ new(pkg, ...)
 	   s->flat = 0;
 
 	   // warning: cast from pointer to integer of different size
-	   isv = newSViv((IV) s);
+	   isv = newSViv( PTR2IV(s) );
 	   sv_2mortal(isv);
 
 	   self = newRV_inc(isv);
@@ -340,13 +344,13 @@ insert(self, ...)
    SV* self;
 
    PPCODE:
-	  ISET* s = (ISET*) SvIV(SvRV(self));
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
       I32 item;
-int inserted = 0;
+      int inserted = 0;
 
       for (item = 1; item < items; ++item)
       {
-	if (s == ST(item)) {
+	if ((SV*)s == ST(item)) {
 	  warn("INSERTING SET UP OWN ARSE");
 	}
 	if ISET_INSERT(s, ST(item))
@@ -363,7 +367,7 @@ remove(self, ...)
 
    PPCODE:
 
-      ISET* s = (ISET*) SvIV(SvRV(self));
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
       I32 hash, index, item;
       SV **el_iter, **el_last, **el_out_iter;
       BUCKET* bucket;
@@ -372,6 +376,7 @@ remove(self, ...)
       for (item = 1; item < items; ++item)
       {
          SV* el = ST(item);
+         SV *rv;
 
 	 if (!SvROK(el)) {
 	   if (s->flat) {
@@ -383,7 +388,7 @@ remove(self, ...)
 	 }
 	 IF_REMOVE_DEBUG(warn("using object remove for ST(%d)", item));
 	 
-         SV* rv = SvRV(el);
+         rv = SvRV(el);
          hash = ISET_HASH(rv);
          index = hash & (s->buckets - 1);
          bucket = s->bucket + index;
@@ -419,7 +424,7 @@ is_null(self)
    SV* self;
 
    CODE:
-   ISET* s = (ISET*) SvIV(SvRV(self));
+   ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
 
    if (s->elems)
      XSRETURN_UNDEF;
@@ -440,7 +445,7 @@ size(self)
    SV* self;
 
    CODE:
-   ISET* s = (ISET*) SvIV(SvRV(self));
+   ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
 
    RETVAL = s->elems + (s->flat ? HvKEYS(s->flat) : 0);
                
@@ -477,7 +482,7 @@ includes(self, ...)
 
    PPCODE:
 
-      ISET* s = (ISET*) SvIV(SvRV(self));
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
       I32 hash, index, item;
       SV **el_iter, **el_last;
       BUCKET* bucket;
@@ -530,7 +535,7 @@ members(self)
    
    PPCODE:
 
-      ISET* s = (ISET*) SvIV(SvRV(self));
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
       BUCKET* bucket_iter = s->bucket;
       BUCKET* bucket_last = bucket_iter + s->buckets;
 
@@ -575,7 +580,7 @@ clear(self)
    SV* self
 
    CODE:
-      ISET* s = (ISET*) SvIV(SvRV(self));
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
 
       iset_clear(s);
       if (s->flat) {
@@ -588,8 +593,7 @@ DESTROY(self)
    SV* self
 
    CODE:
-
-      ISET* s = (ISET*) SvIV(SvRV(self));
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
       IF_DEBUG(warn("aargh!\n"));
       iset_clear(s);
       if (s->flat) {
@@ -824,7 +828,7 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
 		      Bug in Storable... that's why.  old news.
 	    */
 	   isv = SvRV(obj);
-	   SvIV_set(isv, (IV) s);
+	   SvIV_set(isv, PTR2IV(s) );
 	   SvIOK_on(isv);
 
 	   for (item = 3; item < items; ++item)

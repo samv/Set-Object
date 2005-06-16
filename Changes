@@ -91,3 +91,8 @@ Revision history for Perl extension Set::Object.
 	- removed debugging &_ func (was causing strange errors on
 	  5.9.1)
 
+1.12 17 Jun 2005
+	- added patch from Sergey Skvortsov for backwards
+	  compatibility with Perl versions before 5.8 (whoops!)
+	  Introduces new dependancy Devel::PPPort on those platforms.
+
