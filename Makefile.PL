@@ -8,5 +8,6 @@ WriteMakefile(
     'LIBS'	=> [''],   # e.g., '-lm' 
     'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
     'INC'	=> '',     # e.g., '-I/usr/include/other' 
+    ($] < 5.008 ? ( 'PREREQ_PM' => "Devel::PPPort" ) : () ),
     test => { TESTS => "t/object/*.t t/scalar/*.t" },
 );
