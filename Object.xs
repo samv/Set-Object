@@ -9,9 +9,7 @@ extern "C" {
 }
 #endif
 
-#if PERL_VERSION < 8
 #include "ppport.h"
-#endif
 
 // for debugging object-related functions
 #define IF_DEBUG(e)

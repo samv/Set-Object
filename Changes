@@ -94,5 +94,4 @@ Revision history for Perl extension Set::Object.
 1.12 17 Jun 2005
 	- added patch from Sergey Skvortsov for backwards
 	  compatibility with Perl versions before 5.8 (whoops!)
-	  Introduces new dependancy Devel::PPPort on those platforms.
-
+	  (include >100k ppport.h!)
