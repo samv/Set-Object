@@ -1,0 +1,13 @@
+This is the debian package for the Set-Object module.
+It was created by Sam Vilain <sam@vilain.net> using dh-make-perl.
+
+This copyright info was automatically extracted from the perl module.
+It may not be accurate, so you better check the module sources
+if don't want to get into legal troubles.
+
+The upstream author is: 
+
+Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
+
+Set::Scalar compatibility, XS debugging and other maintainership
+courtesy of Sam Vilain, <samv@cpan.org>.
