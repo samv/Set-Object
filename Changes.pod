@@ -7,6 +7,11 @@
 
 =item *
 
+Fix F<Makefile.PL> so this F<Changes.pod> is not delivered as
+C<Set::Changes> :-}
+
+=item *
+
 Restore compatibility with 5.6.0
 
 =item *
