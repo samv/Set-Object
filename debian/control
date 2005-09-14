@@ -1,7 +1,7 @@
 Source: libset-object-perl
 Section: perl
 Priority: optional
-Build-Depends: debhelper (>= 4.0.2)
+Build-Depends: debhelper (>= 4.0.2), libtest-simple-perl
 Build-Depends-Indep: perl (>= 5.6)
 Maintainer: Sam Vilain <sam@vilain.net>
 Standards-Version: 3.6.1

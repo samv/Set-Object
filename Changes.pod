@@ -7,11 +7,12 @@
 
 =item *
 
-Compatibility with 5.6.0
+Restore compatibility with 5.6.0
 
 =item *
 
-Remove some compile-time warnings
+Remove some compile-time warnings, please let me know if this version
+does not build on any platform!
 
 =back
 

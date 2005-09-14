@@ -1,14 +1,9 @@
-libset-object-perl (1.12-2take2) unstable; urgency=low
+libset-object-perl (1.13-1) unstable; urgency=low
 
-  * pcvs test build version 1.12-2take2
+  * cross-debian porting work.  Now builds successfully on 11 x86
+    debian and ubuntu distributions.
 
- -- Sam Vilain <sam@vilain.net>  Thu, 15 Sep 2005 10:14:50 +1200
-
-libset-object-perl (1.12-2take1) unstable; urgency=low
-
-  * pcvs test build version 1.12-2take1
-
- -- Sam Vilain <sam@vilain.net>  Thu, 15 Sep 2005 10:13:50 +1200
+ -- Sam Vilain <sam@vilain.net>  Thu, 15 Sep 2005 11:34:08 +1200
 
 libset-object-perl (1.12-1) unstable; urgency=low
 

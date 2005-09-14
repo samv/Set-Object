@@ -684,6 +684,8 @@ CODE:
 
       // XSRETURN_UNDEF;
 	RETVAL = PTR2UV(SvRV(sv));
+    } else {
+      RETVAL = 0;
     }
 }
 OUTPUT:
@@ -796,8 +798,6 @@ OUTPUT:
 void
 _STORABLE_thaw(obj, cloning, serialized, ...)
    SV* obj;
-   SV* cloning;
-   SV* serialized;
 
    PPCODE:
 
