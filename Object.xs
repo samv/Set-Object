@@ -81,7 +81,6 @@ int iset_insert_scalar(ISET* s, SV* sv)
 {
   STRLEN len;
   char* key = 0;
-  SV** oldsvref;
 
   if (!s->flat) {
     IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): creating scalar hash", s));
@@ -155,7 +154,6 @@ bool iset_includes_scalar(ISET* s, SV* sv)
 
 int iset_insert_one(ISET* s, SV* rv)
 {
-	BUCKET** ppb;
 	I32 hash, index;
 	SV* el;
 	int ins = 0;
@@ -298,7 +296,7 @@ MODULE = Set::Object		PACKAGE = Set::Object
 
 PROTOTYPES: DISABLE
 
-SV*
+void
 new(pkg, ...)
    SV* pkg;
 
@@ -428,8 +426,8 @@ is_null(self)
      XSRETURN_UNDEF;
 
    if (s->flat) {
-     if (HvUSEDKEYS(s->flat)) {
-       //warn("got some keys: %d\n", HvUSEDKEYS(s->flat));
+     if (HvKEYS(s->flat)) {
+       //warn("got some keys: %d\n", HvKEYS(s->flat));
        XSRETURN_UNDEF;
      }
    }
@@ -537,7 +535,7 @@ members(self)
       BUCKET* bucket_iter = s->bucket;
       BUCKET* bucket_last = bucket_iter + s->buckets;
 
-      EXTEND(sp, s->elems + (s->flat ? HvUSEDKEYS(s->flat) : 0) );
+      EXTEND(sp, s->elems + (s->flat ? HvKEYS(s->flat) : 0) );
 
       for (; bucket_iter != bucket_last; ++bucket_iter)
       {
@@ -686,6 +684,8 @@ CODE:
 
       // XSRETURN_UNDEF;
 	RETVAL = PTR2UV(SvRV(sv));
+    } else {
+      RETVAL = 0;
     }
 }
 OUTPUT:
@@ -798,8 +798,6 @@ OUTPUT:
 void
 _STORABLE_thaw(obj, cloning, serialized, ...)
    SV* obj;
-   SV* cloning;
-   SV* serialized;
 
    PPCODE:
 
