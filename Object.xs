@@ -428,8 +428,8 @@ is_null(self)
      XSRETURN_UNDEF;
 
    if (s->flat) {
-     if (HvUSEDKEYS(s->flat)) {
-       //warn("got some keys: %d\n", HvUSEDKEYS(s->flat));
+     if (HvKEYS(s->flat)) {
+       //warn("got some keys: %d\n", HvKEYS(s->flat));
        XSRETURN_UNDEF;
      }
    }
@@ -537,7 +537,7 @@ members(self)
       BUCKET* bucket_iter = s->bucket;
       BUCKET* bucket_last = bucket_iter + s->buckets;
 
-      EXTEND(sp, s->elems + (s->flat ? HvUSEDKEYS(s->flat) : 0) );
+      EXTEND(sp, s->elems + (s->flat ? HvKEYS(s->flat) : 0) );
 
       for (; bucket_iter != bucket_last; ++bucket_iter)
       {
