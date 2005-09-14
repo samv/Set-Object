@@ -81,7 +81,6 @@ int iset_insert_scalar(ISET* s, SV* sv)
 {
   STRLEN len;
   char* key = 0;
-  SV** oldsvref;
 
   if (!s->flat) {
     IF_INSERT_DEBUG(warn("iset_insert_scalar(%x): creating scalar hash", s));
@@ -155,7 +154,6 @@ bool iset_includes_scalar(ISET* s, SV* sv)
 
 int iset_insert_one(ISET* s, SV* rv)
 {
-	BUCKET** ppb;
 	I32 hash, index;
 	SV* el;
 	int ins = 0;
@@ -298,7 +296,7 @@ MODULE = Set::Object		PACKAGE = Set::Object
 
 PROTOTYPES: DISABLE
 
-SV*
+void
 new(pkg, ...)
    SV* pkg;
 

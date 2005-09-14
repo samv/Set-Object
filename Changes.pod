@@ -9,6 +9,10 @@
 
 Compatibility with 5.6.0
 
+=item *
+
+Remove some compile-time warnings
+
 =back
 
 =head1 1.12, 30 Aug 2005
