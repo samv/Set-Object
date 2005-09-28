@@ -9,5 +9,5 @@ WriteMakefile(
     'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
     'INC'	=> '',     # e.g., '-I/usr/include/other' 
     PM => {'lib/Set/Object.pm' => '$(INST_LIBDIR)/Object.pm'},
-    test => { TESTS => "t/object/*.t t/scalar/*.t" },
+    test => { TESTS => join(' ', glob('t/object/*.t'), glob('t/scalar/*.t')) },
 );

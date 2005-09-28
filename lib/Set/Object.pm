@@ -366,7 +366,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set );
-$VERSION = '1.13';
+$VERSION = '1.14';
 
 bootstrap Set::Object $VERSION;
 

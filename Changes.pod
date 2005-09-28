@@ -1,6 +1,16 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.14
+
+=over
+
+=item *
+
+Fix build problem on Win32 (thanks Steffen Goeldner)
+
+=back
+
 =head1 1.13
 
 =over
