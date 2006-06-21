@@ -37,6 +37,7 @@ t/scalar/intersection.t
 t/scalar/member.t
 t/scalar/misc.t
 t/scalar/set_set.t
+t/scalar/storable.t
 t/scalar/symmdiff.t
 t/scalar/union.t
 t/scalar/unique.t

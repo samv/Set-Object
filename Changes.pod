@@ -1,6 +1,16 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.15, 21 Jun 2006
+
+=over
+
+=item *
+
+Dumping sets with scalars in them via L<Storable> now works.
+
+=back
+
 =head1 1.14
 
 =over

@@ -343,6 +343,8 @@ and/or modified under the terms of the Perl Artistic License
 
 Portions Copyright (c) 2003 - 2005, Sam Vilain.  Same license.
 
+Portions Copyright (c) 2006, Catalyst IT (NZ) Limited.  Same license.
+
 =head1 SEE ALSO
 
 perl(1), perltie(1), L<Set::Scalar>, overload.pm
@@ -366,7 +368,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set );
-$VERSION = '1.14';
+$VERSION = '1.15';
 
 bootstrap Set::Object $VERSION;
 
@@ -808,13 +810,18 @@ sub is_key {
 sub STORABLE_freeze {
     my $obj = shift;
     my $am_cloning = shift;
-    return ("", $obj->members);
+    return ("v2", [ $obj->members ]);
 }
 
 use Devel::Peek qw(Dump);
 
 sub STORABLE_thaw {
     #print Dump $_ foreach (@_);
+
+    $DB::single = 1;
+    if ( $_[2] and $_[2] eq "v2" ) {
+	@_ = (@_[0,1], "", @{ $_[3] });
+    }
 
     goto &_STORABLE_thaw;
     #print "Got here\n";
