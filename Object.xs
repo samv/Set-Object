@@ -18,6 +18,8 @@ extern "C" {
 #define IF_REMOVE_DEBUG(e)
 #define IF_INSERT_DEBUG(e)
 
+#define SET_OBJECT_MAGIC_backref (char)0x9f
+
 typedef struct _BUCKET
 {
 	SV** sv;
@@ -28,6 +30,7 @@ typedef struct _ISET
 {
 	BUCKET* bucket;
 	I32 buckets, elems;
+        SV* is_weak;
         HV* flat;
 } ISET;
 
@@ -178,7 +181,11 @@ int iset_insert_one(ISET* s, SV* rv)
 	{
 		++s->elems;
 		++ins;
-		SvREFCNT_inc(el);
+		if (s->is_weak) {
+		    _cast_magic(s, el);
+		} else {
+		    SvREFCNT_inc(el);
+		}
 		IF_DEBUG(warn("rc of %p bumped to %d\n", el, SvREFCNT(el)));
 	}
 
@@ -274,7 +281,11 @@ void iset_clear(ISET* s)
 					 bucket_iter, bucket_iter - s->bucket,
 					 el_iter - bucket_iter->sv));
 
-				SvREFCNT_dec(*el_iter);
+				if (s->is_weak) {
+				  _dispel_magic(s,*el_iter);
+				} else {
+				  SvREFCNT_dec(*el_iter);
+				}
 				*el_iter = 0;
 			}
 		}
@@ -291,6 +302,83 @@ void iset_clear(ISET* s)
 	s->elems = 0;
 }
 
+
+MAGIC*
+_detect_magic(ISET* s, SV* sv) {
+    SV* self = s->is_weak;
+    if (sv) {
+        MAGIC *mg;
+        for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
+	    if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
+	        if (mg->mg_obj == self) {
+		  return mg;
+		}
+	    }
+        }
+    }
+    return 0;
+}
+
+MAGIC*
+_cast_magic(ISET* s, SV* sv) {
+    SV* self = s->is_weak;
+    if (sv) {
+        MAGIC *mg;
+        for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
+	    if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
+	        if (mg->mg_obj == self) {
+		  return mg;
+		}
+	    }
+        }
+    }
+    return 0;
+}
+
+MAGIC*
+_dispel_magic(ISET* s, SV* sv) {
+    SV* self = s->is_weak;
+    if (sv) {
+        MAGIC *mg;
+        for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
+	    if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
+	        if (mg->mg_obj == self) {
+		  return mg;
+		}
+	    }
+        }
+    }
+    return 0;
+}
+
+void
+_fiddle_strength(ISET* s, int strong) {
+
+      BUCKET* bucket_iter = s->bucket;
+      BUCKET* bucket_last = bucket_iter + s->buckets;
+
+      for (; bucket_iter != bucket_last; ++bucket_iter)
+      {
+         SV **el_iter, **el_last;
+
+         if (!bucket_iter->sv)
+            continue;
+
+         el_iter = bucket_iter->sv;
+         el_last = el_iter + bucket_iter->n;
+
+         for (; el_iter != el_last; ++el_iter)
+            if (*el_iter) {
+	      if (strong) {
+		_dispel_magic(s, *el_iter);
+		SvREFCNT_inc(*el_iter);
+	      }
+	      else {
+		_cast_magic(s, *el_iter);
+		SvREFCNT_dec(*el_iter);
+	      }
+	    }
+      }
 
 MODULE = Set::Object		PACKAGE = Set::Object		
 
@@ -314,6 +402,7 @@ new(pkg, ...)
 	   s->bucket = 0;
 	   s->buckets = 0;
 	   s->flat = 0;
+	   s->is_weak = 0;
 
 	   // warning: cast from pointer to integer of different size
 	   isv = newSViv( PTR2IV(s) );
@@ -404,8 +493,12 @@ remove(self, ...)
          {
             if (*el_iter == rv)
             {
-               SvREFCNT_dec(rv);
-			   *el_iter = 0;
+	       if (s->is_weak) {
+		 _dispel_magic(s,rv);
+	       } else {
+		 SvREFCNT_dec(rv);
+	       }
+	       *el_iter = 0;
                --s->elems;
 	       removed++;
 			   break;
@@ -597,6 +690,45 @@ DESTROY(self)
       }
       Safefree(s);
       
+int
+is_weak(self)
+   SV* self
+
+   CODE:
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
+
+      RETVAL = s->is_weak;
+
+   OUTPUT: RETVAL
+
+void
+weaken(self)
+   SV* self
+
+   CODE:
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
+
+      if (s->is_weak)
+        XSRETURN_UNDEF;
+
+      s->is_weak = self;
+
+      _fiddle_strength(s, 0);
+
+void
+strengthen(self)
+   SV* self
+
+   CODE:
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
+
+      if (!s->is_weak)
+        XSRETURN_UNDEF;
+
+      _fiddle_strength(s, 0);
+
+      s->is_weak = 0;
+
    /* Here are some functions from Scalar::Util; they are so simple,
       that it isn't worth making a dependancy on that module. */
 
