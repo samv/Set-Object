@@ -810,7 +810,7 @@ sub is_key {
 sub STORABLE_freeze {
     my $obj = shift;
     my $am_cloning = shift;
-    return ("v2", [ $obj->members ]);
+    return ("v3-" . ($obj->is_weak ? "w" : "s"), [ $obj->members ]);
 }
 
 use Devel::Peek qw(Dump);
@@ -819,8 +819,21 @@ sub STORABLE_thaw {
     #print Dump $_ foreach (@_);
 
     $DB::single = 1;
-    if ( $_[2] and $_[2] eq "v2" ) {
-	@_ = (@_[0,1], "", @{ $_[3] });
+    if ( $_[2] ) {
+	if ( $_[2] eq "v2" ) {
+	    @_ = (@_[0,1], "", @{ $_[3] });
+	}
+	elsif ( $_[2] =~ m/^v3-(w|s)/ ) {
+	    @_ = (@_[0,1], "", @{ $_[3] });
+	    if ( $1 eq "w" ) {
+		my $self = shift;
+		$self->_STORABLE_thaw(@_);
+		$self->weaken();
+		return;
+	    }
+	} else {
+	    croak("Unrecognised Set::Object Storable version $_[2]");
+	}
     }
 
     goto &_STORABLE_thaw;
