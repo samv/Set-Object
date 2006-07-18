@@ -12,7 +12,7 @@ extern "C" {
 #include "ppport.h"
 
 // for debugging object-related functions
-#if 0
+#if 1
 #define DEBUG(msg, e...) warn("# (" __FILE__ ":%d): " msg, __LINE__, ##e)
 #else
 #define DEBUG(msg, e...)
@@ -23,7 +23,7 @@ extern "C" {
 #define IF_INSERT_DEBUG(e)
 
 // for debugging weakref-related functions
-#if 0
+#if 1
 #define SPELL_DEBUG(msg, e...) DEBUG(msg, ##e)
 #else
 #define SPELL_DEBUG(msg, e...)
@@ -269,7 +269,7 @@ int iset_insert_one(ISET* s, SV* rv)
 	return ins;
 }
 
-void iset_clear(ISET* s)
+void iset_clear(ISET* s, int in_destroy)
 {
 	BUCKET* bucket_iter = s->bucket;
 	BUCKET* bucket_last = bucket_iter + s->buckets;
@@ -295,7 +295,7 @@ void iset_clear(ISET* s)
 
 				if (s->is_weak) {
 				  SPELL_DEBUG("dispelling magic");
-				  _dispel_magic(s,*el_iter);
+				  _dispel_magic(s,*el_iter, in_destroy);
 				} else {
 				  SPELL_DEBUG("removing element");
 				  SvREFCNT_dec(*el_iter);
@@ -323,7 +323,7 @@ _detect_magic(SV* sv) {
 }
 
 void
-_dispel_magic(ISET* s, SV* sv) {
+_dispel_magic(ISET* s, SV* sv, int in_destroy) {
     SV* self_svrv = s->is_weak;
     MAGIC* mg = _detect_magic(sv);
     SPELL_DEBUG("dispelling magic from 0x%.8x (self = 0x%.8x, mg = 0x%.8x)",
@@ -350,18 +350,35 @@ _dispel_magic(ISET* s, SV* sv) {
 	 }
 	 i--;
        }
-       if (!c) {
-	 /* we should clear the magic, really. */
+       if ( !c && !in_destroy) {
 	 MAGIC* last = 0;
+	 SPELL_DEBUG("removing our magic from 0x%.8x", sv);
 	 for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
 	   if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
 	     if (last) {
+	       SPELL_DEBUG("linking 0x%.8x to 0x%.8x", last,
+			   mg->mg_moremagic);
 	       last->mg_moremagic = mg->mg_moremagic;
 	       break;
-	     } else {
-	       SvMAGIC(sv) = 0;
 	     }
+	     else if (mg->mg_moremagic) {
+	       SPELL_DEBUG("removing first magic from 0x%.8x", sv);
+	       SvMAGIC(sv) = mg->mg_moremagic;
+	     }
+	     else
+	     {
+	       SPELL_DEBUG("clearing all magic from 0x%.8x", sv);
+	       SvMAGIC(sv) = 0;
+	       SvAMAGIC_off(sv);
+	     }
+	     SPELL_DEBUG("dropping rc of 0x%.8x to %d",
+			 mg->mg_obj, SvREFCNT(mg->mg_obj)-1);
+	     SvREFCNT_dec(mg->mg_obj);
+	     SPELL_DEBUG("Safefree 0x%.8x", mg);
+	     /* we're leaking magic!*/
+	     /* Safefree(mg); */
 	   }
+	   last=mg;
 	 }
        }
     }
@@ -386,7 +403,7 @@ _fiddle_strength(ISET* s, int strong) {
          for (; el_iter != el_last; ++el_iter)
             if (*el_iter) {
 	      if (strong) {
-		_dispel_magic(s, *el_iter);
+		_dispel_magic(s, *el_iter, 0);
 		SvREFCNT_inc(*el_iter);
 		DEBUG("bumped RC of 0x%.8x to %d", *el_iter,
 		      SvREFCNT(*el_iter));
@@ -525,7 +542,7 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
 	  if (s->is_weak) {
 	    if (!spell_in_progress) {
 	      SPELL_DEBUG("Removing ST(0x%.8x) magic", referant);
-	      _dispel_magic(s,referant);
+	      _dispel_magic(s,referant,0);
 	    } else {
 	      SPELL_DEBUG("Not removing ST(0x%.8x) magic (spell in progress)", referant);
 
@@ -796,7 +813,7 @@ clear(self)
    CODE:
       ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
 
-      iset_clear(s);
+      iset_clear(s, 0);
       if (s->flat) {
 	hv_clear(s->flat);
 	IF_REMOVE_DEBUG(warn("iset_clear(%x): cleared", s));
@@ -809,7 +826,7 @@ DESTROY(self)
    CODE:
       ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
       DEBUG("aargh!");
-      iset_clear(s);
+      iset_clear(s, 1);
       if (s->flat) {
 	hv_undef(s->flat);
       }
