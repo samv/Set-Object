@@ -335,7 +335,7 @@ _dispel_magic(ISET* s, SV* sv) {
        int c = 0;
 
        while (i >= 0) {
-	 if (svp[i]) {
+	 if (svp[i] && SvIV(svp[i])) {
 	   ISET* o = INT2PTR(ISET*, SvIV(svp[i]));
 	   if (s == o) {
 	     /*
@@ -343,7 +343,7 @@ _dispel_magic(ISET* s, SV* sv) {
 			 svp[i], SvREFCNT(svp[i]), SvREFCNT(svp[i])-1);
 	     SvREFCNT_dec(svp[i]);
 	     */
-	     svp[i] = Nullsv;
+	     svp[i] = newSViv(0);
 	   } else {
 	     c++;
 	   }
@@ -417,14 +417,14 @@ _spell_effect(pTHX_ SV *sv, MAGIC *mg)
 
     while (i >= 0) {
         SPELL_DEBUG("_spell_effect %d", i);
-	if (svp[i]) {
+	if (svp[i] && SvIV(svp[i])) {
 	  SPELL_DEBUG("_spell_effect i = %d, SV = 0x%.8x", i, svp[i]);
 	  ISET* s = INT2PTR(ISET*, SvIV(svp[i]));
 	  if (!s->is_weak)
 	    Perl_croak(aTHX_ "panic: set_object_magic_killbackrefs (flags=%"UVxf")",
 		       (UV)SvFLAGS(svp[i]));
 	  /* SvREFCNT_dec(svp[i]); */
-	  svp[i] = Nullsv;
+	  svp[i] = newSViv(0);
 	  if (iset_remove_one(s, sv, 1) != 1) {
 	    warn("Set::Object magic backref hook called on non-existent item (0x%x, self = 0x%x)", sv, s->is_weak);
 	  };
@@ -464,7 +464,7 @@ _cast_magic(ISET* s, SV* sv) {
     free = -1;
 
     while (i >= 0) {
-      if (svp[i]) {
+      if (svp[i] && SvIV(svp[i])) {
 	ISET* o = INT2PTR(ISET*, SvIV(svp[i]));
 	if (s == o)
 	  return;

@@ -20,7 +20,7 @@ my $set = set();
       $c-- }
 }
 
-#use Devel::Peek;
+use Devel::Peek;
 
 {
     my $item = MyClass->new;
@@ -88,7 +88,11 @@ is($set->size, 1, "->strengthen()");
 	my $magic = Set::Object::get_magic($referant);
 	is_deeply($magic, [$$set], "Magic detected");
     }
-    is(Set::Object::get_magic($referant), undef, "Magic removed");
+    my $magic = Set::Object::get_magic($referant);
+    #diag("magic is $magic, length ".@$magic);
+    #Dump($magic);
+    #diag("got that?  :)");
+    is_deeply($magic, undef, "Magic removed");
 }
 
 # test that dispel works with tied refs
@@ -114,7 +118,7 @@ is($set->size, 1, "->strengthen()");
     is($object{x}, "You're the one, world",
        "hash not ruined by _dispel_magic");
 
-    is(Set::Object::get_magic(\%object), undef, "Magic removed");
+    is_deeply(Set::Object::get_magic(\%object), undef, "Magic removed");
     $object{y} = "Catch the light";
     is($object{y}, "Catch the light, world",
        "tie magic not interefered with by _dispel_magic");
@@ -137,7 +141,7 @@ is($set->size, 1, "->strengthen()");
 	is_deeply(Set::Object::get_magic(\%object), [$$set],
 		  "Magic detected");
     }
-    is(Set::Object::get_magic(\%object), undef, "Magic removed");
+    is_deeply(Set::Object::get_magic(\%object), undef, "Magic removed");
     $object{y} = "Yep, that's enough";
     #Dump(\%object);
     is($object{y}, "Yep, that's enough, world",
