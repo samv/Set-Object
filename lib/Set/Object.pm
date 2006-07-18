@@ -123,6 +123,21 @@ from the C<Set::Object> is not an error.
 
 Returns the number of elements that were actually removed.
 
+=head2 weaken
+
+Makes all the references in the set "weak" - that is, they do not
+increase the reference count of the object they point to, just like
+L<Scalar::Util|Scalar::Util>'s C<weaken> function.
+
+This was introduced with Set::Object 1.16, and uses a brand new type
+of magic.  B<Use with caution>.  If you get segfaults when you use
+C<weaken>, please reduce your problem to a test script before
+submission.
+
+=head2 strengthen
+
+Turns a weak set back into a normal one.
+
 =head2 invert( [I<list>] )
 
 For each item in I<list>, it either removes it or adds it to the set,
@@ -283,6 +298,15 @@ be a more general multi-purpose collection, then this (and C<ish_int>)
 might be a good function to use to distinguish different types of
 indexes from values.
 
+=item B<get_magic>
+
+Pass to a scalar, and get the magick wand (C<mg_obj>) used by the weak
+set implementation.  The return will be a list of integers which are
+pointers to the actual C<ISET> structure.  Whatever you do don't
+change the array :).  This is used only by the test suite, and if you
+find it useful for something then you should probably conjure up a
+test suite and send it to me, otherwise it could get pulled.
+
 =back
 
 =head1 PERFORMANCE
@@ -332,8 +356,8 @@ On my computer the results are:
 
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
-Set::Scalar compatibility, XS debugging and other maintainership
-courtesy of Sam Vilain, <samv@cpan.org>
+Set::Scalar compatibility, XS debugging, weak references support and
+general maintainership courtesy of Sam Vilain, <samv@cpan.org>
 
 =head1 LICENCE
 
