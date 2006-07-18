@@ -12,15 +12,22 @@ extern "C" {
 #include "ppport.h"
 
 // for debugging object-related functions
-// #define DEBUG(msg, e...) warn("# (" __FILE__ ":%d): " msg, __LINE__, ##e)
+#if 0
+#define DEBUG(msg, e...) warn("# (" __FILE__ ":%d): " msg, __LINE__, ##e)
+#else
 #define DEBUG(msg, e...)
+#endif
 
 // for debugging scalar-related functions
 #define IF_REMOVE_DEBUG(e)
 #define IF_INSERT_DEBUG(e)
 
 // for debugging weakref-related functions
+#if 0
 #define SPELL_DEBUG(msg, e...) DEBUG(msg, ##e)
+#else
+#define SPELL_DEBUG(msg, e...)
+#endif
 
 #define SET_OBJECT_MAGIC_backref (char)0x9f
 
@@ -325,6 +332,7 @@ _dispel_magic(ISET* s, SV* sv) {
        AV* wand = mg->mg_obj;
        SV ** const svp = AvARRAY(wand);
        I32 i = AvFILLp(wand);
+       int c = 0;
 
        while (i >= 0) {
 	 if (svp[i]) {
@@ -336,9 +344,25 @@ _dispel_magic(ISET* s, SV* sv) {
 	     SvREFCNT_dec(svp[i]);
 	     */
 	     svp[i] = Nullsv;
+	   } else {
+	     c++;
 	   }
 	 }
 	 i--;
+       }
+       if (!c) {
+	 /* we should clear the magic, really. */
+	 MAGIC* last = 0;
+	 for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
+	   if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
+	     if (last) {
+	       last->mg_moremagic = mg->mg_moremagic;
+	       break;
+	     } else {
+	       SvMAGIC(sv) = 0;
+	     }
+	   }
+	 }
        }
     }
 }
@@ -876,6 +900,31 @@ CODE:
 OUTPUT:
   RETVAL
 
+void
+get_magic(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  MAGIC* mg;
+  SV* magic;
+  if (! SvROK(sv)) {
+     warn("tried to get magic from non-reference");
+     XSRETURN_UNDEF;
+  }
+
+  if (! (mg = _detect_magic(SvRV(sv))) )
+     XSRETURN_UNDEF;
+
+  SPELL_DEBUG("found magic on 0x%.8x - 0x%.8x", sv, mg);
+  SPELL_DEBUG("mg_obj = 0x%.8x", mg->mg_obj);
+
+     /*magic = newSV(0);
+  SvRV(magic) = mg->mg_obj;
+  SvROK_on(magic); */
+  POPs;
+  magic = newRV_inc(mg->mg_obj);
+  PUSHs(magic);
+  XSRETURN(1);
 
 char *
 blessed(sv)
