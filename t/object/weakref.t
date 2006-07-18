@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-use Test::More tests => 10;
+use Test::More tests => 13;
 use Set::Object qw(set refaddr);
 use Storable qw(dclone);
 
@@ -60,3 +60,34 @@ is(($clone->{who}->members)[0], $clone->{bob}, "Set contents preserved");
 delete $clone->{bob};
 
 is($clone->{who}->size, 0, "weaken preserved over dclone()");
+
+# test strengthen, too
+{
+    $set->clear();
+    $set->weaken();
+    my $ref = {};
+    {
+	my $ref2 = {};
+	$set->insert($ref, $ref2);
+	is($set->size, 2, "sanity check 4");
+    }
+    is($set->size, 1, "sanity check 5");
+    $set->strengthen;
+}
+
+is($set->size, 1, "->strengthen()");
+
+# test that weak sets can expire before their referants
+{
+    my $referant = [ "hello, world" ];
+    {
+	my $set = set();
+	$set->weaken;
+	$set->insert($referant);
+    }
+
+    # well, we can't tell that the set died normally, but nevermind
+    # that.
+
+}
+pass("referant object died successfully");
