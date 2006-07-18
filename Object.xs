@@ -12,11 +12,24 @@ extern "C" {
 #include "ppport.h"
 
 // for debugging object-related functions
-#define IF_DEBUG(e)
+#if 0
+#define DEBUG(msg, e...) warn("# (" __FILE__ ":%d): " msg, __LINE__, ##e)
+#else
+#define DEBUG(msg, e...)
+#endif
 
 // for debugging scalar-related functions
 #define IF_REMOVE_DEBUG(e)
 #define IF_INSERT_DEBUG(e)
+
+// for debugging weakref-related functions
+#if 0
+#define SPELL_DEBUG(msg, e...) DEBUG(msg, ##e)
+#else
+#define SPELL_DEBUG(msg, e...)
+#endif
+
+#define SET_OBJECT_MAGIC_backref (char)0x9f
 
 typedef struct _BUCKET
 {
@@ -28,6 +41,7 @@ typedef struct _ISET
 {
 	BUCKET* bucket;
 	I32 buckets, elems;
+        SV* is_weak;
         HV* flat;
 } ISET;
 
@@ -45,7 +59,7 @@ int insert_in_bucket(BUCKET* pb, SV* sv)
 		New(0, pb->sv, 1, SV*);
 		pb->sv[0] = sv;
 		pb->n = 1;
-		IF_DEBUG(warn("inserting %p in bucket %p offset %d\n", sv, pb, 0));
+		DEBUG("inserting 0x%.8x in bucket 0x%.8x offset %d", sv, pb, 0);
 	}
 	else
 	{
@@ -71,7 +85,7 @@ int insert_in_bucket(BUCKET* pb, SV* sv)
 
 		*hole = sv;
 
-		IF_DEBUG(warn("inserting %p in bucket %p offset %d\n", sv, pb, iter - pb->sv));
+		DEBUG("inserting 0x%.8x in bucket 0x%.8x offset %d", sv, pb, iter - pb->sv);
 	}
 	
 	return 1;
@@ -120,7 +134,7 @@ int iset_remove_scalar(ISET* s, SV* sv)
     return 0;
   }
 
-  //IF_DEBUG(warn("Checking for existance of %s", SvPV_nolen(sv)));
+  //DEBUG("Checking for existance of %s", SvPV_nolen(sv));
   //SvGETMAGIC(sv);
   IF_REMOVE_DEBUG(warn("iset_remove_scalar(%x): sv (%x, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
 
@@ -178,8 +192,13 @@ int iset_insert_one(ISET* s, SV* rv)
 	{
 		++s->elems;
 		++ins;
-		SvREFCNT_inc(el);
-		IF_DEBUG(warn("rc of %p bumped to %d\n", el, SvREFCNT(el)));
+		if (s->is_weak) {
+		    DEBUG("rc of 0x%.8x left as-is, casting magic", el);
+		    _cast_magic(s, el);
+		} else {
+		    SvREFCNT_inc(el);
+		    DEBUG("rc of 0x%.8x bumped to %d", el, SvREFCNT(el));
+		}
 	}
 
 	if (s->elems > s->buckets)
@@ -190,7 +209,7 @@ int iset_insert_one(ISET* s, SV* rv)
 		BUCKET *bucket_first, *bucket_iter, *bucket_last, *new_bucket;
 		int i;
 
-		IF_DEBUG(warn("Reindexing, n = %d\n", s->elems));
+		DEBUG("Reindexing, n = %d", s->elems);
 
 		Renew(s->bucket, newn, BUCKET);
 		Zero(s->bucket + oldn, oldn, BUCKET);
@@ -225,8 +244,8 @@ int iset_insert_one(ISET* s, SV* rv)
 				}
 
 				new_bucket = bucket_first + index;
-				IF_DEBUG(warn("%p moved from bucket %d:%p to %d:%p",
-					sv, i, bucket_iter, index, new_bucket));
+				DEBUG("0x%.8x moved from bucket %d:0x%.8x to %d:0x%.8x",
+					sv, i, bucket_iter, index, new_bucket);
 				insert_in_bucket(new_bucket, sv);
 			}
          
@@ -269,12 +288,18 @@ void iset_clear(ISET* s)
 		{
 			if (*el_iter)
 			{
-				IF_DEBUG(warn("freeing %p, rc = %d, bucket = %p(%d) pos = %d\n",
+				DEBUG("freeing 0x%.8x, rc = %d, bucket = 0x%.8x(%d) pos = %d",
 					 *el_iter, SvREFCNT(*el_iter),
 					 bucket_iter, bucket_iter - s->bucket,
-					 el_iter - bucket_iter->sv));
+					 el_iter - bucket_iter->sv);
 
-				SvREFCNT_dec(*el_iter);
+				if (s->is_weak) {
+				  SPELL_DEBUG("dispelling magic");
+				  _dispel_magic(s,*el_iter);
+				} else {
+				  SPELL_DEBUG("removing element");
+				  SvREFCNT_dec(*el_iter);
+				}
 				*el_iter = 0;
 			}
 		}
@@ -292,6 +317,239 @@ void iset_clear(ISET* s)
 }
 
 
+MAGIC*
+_detect_magic(SV* sv) {
+    return mg_find(sv, SET_OBJECT_MAGIC_backref);
+}
+
+void
+_dispel_magic(ISET* s, SV* sv) {
+    SV* self_svrv = s->is_weak;
+    MAGIC* mg = _detect_magic(sv);
+    SPELL_DEBUG("dispelling magic from 0x%.8x (self = 0x%.8x, mg = 0x%.8x)",
+		sv, self_svrv, mg);
+    if (mg) {
+       AV* wand = mg->mg_obj;
+       SV ** const svp = AvARRAY(wand);
+       I32 i = AvFILLp(wand);
+       int c = 0;
+
+       while (i >= 0) {
+	 if (svp[i] && SvIV(svp[i])) {
+	   ISET* o = INT2PTR(ISET*, SvIV(svp[i]));
+	   if (s == o) {
+	     /*
+	     SPELL_DEBUG("dropping RC of 0x%.8x from %d to %d",
+			 svp[i], SvREFCNT(svp[i]), SvREFCNT(svp[i])-1);
+	     SvREFCNT_dec(svp[i]);
+	     */
+	     svp[i] = newSViv(0);
+	   } else {
+	     c++;
+	   }
+	 }
+	 i--;
+       }
+       if (!c) {
+	 /* we should clear the magic, really. */
+	 MAGIC* last = 0;
+	 for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
+	   if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
+	     if (last) {
+	       last->mg_moremagic = mg->mg_moremagic;
+	       break;
+	     } else if (mg->mg_moremagic) {
+	       SvMAGIC(sv) = mg->mg_moremagic;
+	     } else {
+	       SvMAGIC(sv) = 0;
+	       SvAMAGIC_off(sv);
+	     }
+	   }
+	   last=mg;
+	 }
+       }
+    }
+}
+
+void
+_fiddle_strength(ISET* s, int strong) {
+
+      BUCKET* bucket_iter = s->bucket;
+      BUCKET* bucket_last = bucket_iter + s->buckets;
+
+      for (; bucket_iter != bucket_last; ++bucket_iter)
+      {
+         SV **el_iter, **el_last;
+
+         if (!bucket_iter->sv)
+            continue;
+
+         el_iter = bucket_iter->sv;
+         el_last = el_iter + bucket_iter->n;
+
+         for (; el_iter != el_last; ++el_iter)
+            if (*el_iter) {
+	      if (strong) {
+		_dispel_magic(s, *el_iter);
+		SvREFCNT_inc(*el_iter);
+		DEBUG("bumped RC of 0x%.8x to %d", *el_iter,
+		      SvREFCNT(*el_iter));
+	      }
+	      else {
+		_cast_magic(s, *el_iter);
+		SvREFCNT_dec(*el_iter);
+		DEBUG("reduced RC of 0x%.8x to %d", *el_iter,
+		      SvREFCNT(*el_iter));
+	      }
+	    }
+      }
+}
+
+int
+_spell_effect(pTHX_ SV *sv, MAGIC *mg)
+{
+    AV * const av = (AV*)mg->mg_obj;
+    SV ** const svp = AvARRAY(av);
+    I32 i = AvFILLp(av);
+
+    SPELL_DEBUG("_spell_effect (SV=0x%.8x, av_len=%d)", sv,
+		av_len(av));
+
+    while (i >= 0) {
+        SPELL_DEBUG("_spell_effect %d", i);
+	if (svp[i] && SvIV(svp[i])) {
+	  SPELL_DEBUG("_spell_effect i = %d, SV = 0x%.8x", i, svp[i]);
+	  ISET* s = INT2PTR(ISET*, SvIV(svp[i]));
+	  if (!s->is_weak)
+	    Perl_croak(aTHX_ "panic: set_object_magic_killbackrefs (flags=%"UVxf")",
+		       (UV)SvFLAGS(svp[i]));
+	  /* SvREFCNT_dec(svp[i]); */
+	  svp[i] = newSViv(0);
+	  if (iset_remove_one(s, sv, 1) != 1) {
+	    warn("Set::Object magic backref hook called on non-existent item (0x%x, self = 0x%x)", sv, s->is_weak);
+	  };
+	}
+	i--;
+    }
+}
+
+static MGVTBL SET_OBJECT_vtbl_backref =
+ 	  {0,	0, 0,	0, MEMBER_TO_FPTR(_spell_effect)};
+
+void
+_cast_magic(ISET* s, SV* sv) {
+    SV* self_svrv = s->is_weak;
+    AV* wand;
+    MGVTBL *vtable = &SET_OBJECT_vtbl_backref;
+    MAGIC* mg;
+    SV ** svp;
+    int how = 0;
+    I32 i,l,free;
+    how = 0x9f; // (int)SET_OBJECT_MAGIC_backref;
+
+    mg = _detect_magic(sv);
+    if (mg) {
+      SPELL_DEBUG("sv_magicext reusing wand 0x%.8x for 0x%.8x", wand, sv);
+      wand = mg->mg_obj;
+    }
+    else {
+      wand=newAV();
+      SPELL_DEBUG("sv_magicext(0x%.8x, 0x%.8x, %ld, 0x%.8x, NULL, 0)", sv, wand, how, vtable);
+      sv_magicext(sv, wand, how, vtable, NULL, 0);
+      SvRMAGICAL_on(sv);
+    }
+
+    svp = AvARRAY(wand);
+    i = AvFILLp(wand);
+    free = -1;
+
+    while (i >= 0) {
+      if (svp[i] && SvIV(svp[i])) {
+	ISET* o = INT2PTR(ISET*, SvIV(svp[i]));
+	if (s == o)
+	  return;
+      } else {
+	free = i;
+      }
+      i = i - 1;
+    }
+
+    if (free == -1) {
+      SPELL_DEBUG("casting self 0x%.8x with av_push", self_svrv, free);
+      av_push(wand, self_svrv);
+    } else {
+      SPELL_DEBUG("casting self 0x%.8x to slot %d", self_svrv, free);
+      svp[free] = self_svrv;
+    }
+    /*
+    SvREFCNT_inc(self_svrv);
+    */
+}
+
+int
+iset_remove_one(ISET* s, SV* el, int spell_in_progress)
+{
+  SV *referant;
+      I32 hash, index;
+      SV **el_iter, **el_last, **el_out_iter;
+      BUCKET* bucket;
+
+  DEBUG("removing scalar 0x%.8x from set 0x%.8x", el, s);
+	 
+  if (SvOK(el) && !SvROK(el)) {
+    DEBUG("scalar is not a ref (flags = 0x%.8x)", SvFLAGS(el));
+    if (s->flat) {
+      DEBUG("calling remove_scalar for 0x%.8x", el);
+      if (iset_remove_scalar(s, el))
+	return 1;
+    }
+    return 0;
+  }
+
+  referant = (spell_in_progress ? el : SvRV(el));
+  hash = ISET_HASH(referant);
+  index = hash & (s->buckets - 1);
+  bucket = s->bucket + index;
+
+  if (s->buckets == 0)
+    return 0;
+
+  if (!bucket->sv)
+    return 0;
+
+  el_iter = bucket->sv;
+  el_out_iter = el_iter;
+  el_last = el_iter + bucket->n;
+  DEBUG("remove: el_last = 0x%.8x, el_iter = 0x%.8x", el_last, el_iter);
+
+  for (; el_iter != el_last; ++el_iter)
+    {
+      if (*el_iter == referant)
+	{
+	  if (s->is_weak) {
+	    if (!spell_in_progress) {
+	      SPELL_DEBUG("Removing ST(0x%.8x) magic", referant);
+	      _dispel_magic(s,referant);
+	    } else {
+	      SPELL_DEBUG("Not removing ST(0x%.8x) magic (spell in progress)", referant);
+
+	    }
+	  } else {
+	    SPELL_DEBUG("Not removing ST(0x%.8x) magic from Muggle", referant);
+	    SvREFCNT_dec(referant);
+	  }
+	  *el_iter = 0;
+	  --s->elems;
+	  return 1;
+	}
+      else
+	{
+	  SPELL_DEBUG("ST(0x%.8x) != 0x%.8x", referant, *el_iter);
+	}
+    }
+  return 0;
+}
+  
 MODULE = Set::Object		PACKAGE = Set::Object		
 
 PROTOTYPES: DISABLE
@@ -314,6 +572,7 @@ new(pkg, ...)
 	   s->bucket = 0;
 	   s->buckets = 0;
 	   s->flat = 0;
+	   s->is_weak = 0;
 
 	   // warning: cast from pointer to integer of different size
 	   isv = newSViv( PTR2IV(s) );
@@ -329,7 +588,7 @@ new(pkg, ...)
 		   ISET_INSERT(s, ST(item));
 	   }
 
-      IF_DEBUG(warn("set!\n"));
+      DEBUG("set!");
 
       PUSHs(self);
       XSRETURN(1);
@@ -351,7 +610,7 @@ insert(self, ...)
 	}
 	if ISET_INSERT(s, ST(item))
 			inserted++;
-		  IF_DEBUG(warn("inserting %p %p size = %d\n", ST(item), SvRV(ST(item)), s->elems));
+		  DEBUG("inserting 0x%.8x 0x%.8x size = %d", ST(item), SvRV(ST(item)), s->elems);
       }
 
 
@@ -372,45 +631,8 @@ remove(self, ...)
       for (item = 1; item < items; ++item)
       {
          SV* el = ST(item);
-         SV *rv;
 
-	 if (!SvROK(el)) {
-	   if (s->flat) {
-	     IF_REMOVE_DEBUG(warn("Calling remove_scalar for ST(%d)", item));
-	     if (iset_remove_scalar(s, el))
-	       removed++;
-	   }
-	   continue;
-	 }
-	 IF_REMOVE_DEBUG(warn("using object remove for ST(%d)", item));
-	 
-         rv = SvRV(el);
-         hash = ISET_HASH(rv);
-         index = hash & (s->buckets - 1);
-         bucket = s->bucket + index;
-
-
-	 if (s->buckets == 0)
-	   goto remove_out;
-
-         if (!bucket->sv)
-            continue;
-
-         el_iter = bucket->sv;
-         el_out_iter = el_iter;
-         el_last = el_iter + bucket->n;
-
-         for (; el_iter != el_last; ++el_iter)
-         {
-            if (*el_iter == rv)
-            {
-               SvREFCNT_dec(rv);
-			   *el_iter = 0;
-               --s->elems;
-	       removed++;
-			   break;
-            }
-         }
+	 removed += iset_remove_one(s, el, 0);
       }
 remove_out:
       XSRETURN_IV(removed);
@@ -489,7 +711,7 @@ includes(self, ...)
          SV* rv;
 
 	 if (!SvROK(el)) {
-	   IF_DEBUG(warn("includes! el = %s\n", SvPV_nolen(el)));
+	   DEBUG("includes! el = %s", SvPV_nolen(el));
 	   if (!iset_includes_scalar(s, el))
 	     XSRETURN_NO;
 	   goto next;
@@ -504,8 +726,8 @@ includes(self, ...)
          index = hash & (s->buckets - 1);
          bucket = s->bucket + index;
 
-		 IF_DEBUG(warn("includes: looking for %p in bucket %d:%p",
-		      rv, index, bucket));
+	 DEBUG("includes: looking for 0x%.8x in bucket %d:0x%.8x",
+	       rv, index, bucket);
 
          if (!bucket->sv)
             XSRETURN_NO;
@@ -590,13 +812,56 @@ DESTROY(self)
 
    CODE:
       ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
-      IF_DEBUG(warn("aargh!\n"));
+      DEBUG("aargh!");
       iset_clear(s);
       if (s->flat) {
 	hv_undef(s->flat);
       }
       Safefree(s);
       
+int
+is_weak(self)
+   SV* self
+
+   CODE:
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
+
+      RETVAL = s->is_weak;
+
+   OUTPUT: RETVAL
+
+void
+weaken(self)
+   SV* self
+
+   CODE:
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
+
+      if (s->is_weak)
+        XSRETURN_UNDEF;
+
+	DEBUG("weakening set (0x%.8x)", SvRV(self));
+
+      s->is_weak = SvRV(self);
+
+      _fiddle_strength(s, 0);
+
+void
+strengthen(self)
+   SV* self
+
+   CODE:
+      ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
+
+      if (!s->is_weak)
+        XSRETURN_UNDEF;
+
+	DEBUG("strengthening set (0x%.8x)", SvRV(self));
+
+      _fiddle_strength(s, 1);
+
+      s->is_weak = 0;
+
    /* Here are some functions from Scalar::Util; they are so simple,
       that it isn't worth making a dependancy on that module. */
 
@@ -639,6 +904,31 @@ CODE:
 OUTPUT:
   RETVAL
 
+void
+get_magic(sv)
+	SV *sv
+PROTOTYPE: $
+CODE:
+  MAGIC* mg;
+  SV* magic;
+  if (! SvROK(sv)) {
+     warn("tried to get magic from non-reference");
+     XSRETURN_UNDEF;
+  }
+
+  if (! (mg = _detect_magic(SvRV(sv))) )
+     XSRETURN_UNDEF;
+
+  SPELL_DEBUG("found magic on 0x%.8x - 0x%.8x", sv, mg);
+  SPELL_DEBUG("mg_obj = 0x%.8x", mg->mg_obj);
+
+     /*magic = newSV(0);
+  SvRV(magic) = mg->mg_obj;
+  SvROK_on(magic); */
+  POPs;
+  magic = newRV_inc(mg->mg_obj);
+  PUSHs(magic);
+  XSRETURN(1);
 
 char *
 blessed(sv)
@@ -811,6 +1101,7 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
 	   s->bucket = 0;
 	   s->buckets = 0;
 	   s->flat = 0;
+	   s->is_weak = 0;
 
 	   if (!SvROK(obj)) {
 	     Perl_croak(aTHX_ "Set::Object::STORABLE_thaw passed a non-reference");
@@ -832,7 +1123,7 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
 		  ISET_INSERT(s, ST(item));
 	   }
 
-      IF_DEBUG(warn("set!\n"));
+      DEBUG("set!");
 
       PUSHs(obj);
       XSRETURN(1);

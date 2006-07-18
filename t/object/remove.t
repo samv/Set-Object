@@ -13,17 +13,19 @@ Set::Object->new->remove($patty);
 
 $simpsons = Set::Object->new($homer, $marge, $bart, $lisa, $maggie);
 
-print "1..3\n";
+use Test::More tests => 7;
 
 $removed = $simpsons->remove($homer);
-print 'not ' unless $simpsons->size() == 4 && $removed == 1
-   && $simpsons == Set::Object->new($marge, $bart, $lisa, $maggie);
-print "ok 1\n";
+
+is($simpsons->size(), 4, "new size correct after remove");
+is($removed, 1, "remove returned number of elements removed");
+is($simpsons, Set::Object->new($marge, $bart, $lisa, $maggie),
+   "set contents correct");
 
 $removed = $simpsons->remove($burns);
-print 'not ' unless $simpsons->size() == 4 && $removed == 0;
-print "ok 2\n";
+is($simpsons->size(), 4, "remove of non-member didn't reduce size");
+is($removed, 0, "remove returned no elements removed");
 
 $removed = $simpsons->remove($patty, $marge, $selma);
-print 'not ' unless $simpsons->size() == 3 && $removed == 1;
-print "ok 3\n";
+is($simpsons->size(), 3, "remove of mixed members & non-members");
+is($removed, 1, "remove returned correct num of elements removed");
