@@ -357,7 +357,10 @@ On my computer the results are:
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
 Set::Scalar compatibility, XS debugging, weak references support and
-general maintainership courtesy of Sam Vilain, <samv@cpan.org>
+general maintainership courtesy of Sam Vilain, <samv@cpan.org>.
+Maximum respect to those who send me test scripts, enhancements, etc
+as patches against my git tree, browsable at
+L<http://utsl.gen.nz/gitweb/?p=Set-Object>.
 
 =head1 LICENCE
 
@@ -392,7 +395,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set );
-$VERSION = '1.15';
+$VERSION = '1.16';
 
 bootstrap Set::Object $VERSION;
 
