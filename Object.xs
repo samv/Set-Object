@@ -358,10 +358,14 @@ _dispel_magic(ISET* s, SV* sv) {
 	     if (last) {
 	       last->mg_moremagic = mg->mg_moremagic;
 	       break;
+	     } else if (mg->mg_moremagic) {
+	       SvMAGIC(sv) = mg->mg_moremagic;
 	     } else {
 	       SvMAGIC(sv) = 0;
+	       SvAMAGIC_off(sv);
 	     }
 	   }
+	   last=mg;
 	 }
        }
     }
