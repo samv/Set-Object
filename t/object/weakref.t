@@ -1,8 +1,9 @@
 # -*- perl -*-
 
-use Test::More tests => 13;
+use Test::More tests => 15;
 use Set::Object qw(set refaddr);
 use Storable qw(dclone);
+use strict;
 
 my $set = set();
 
@@ -84,10 +85,8 @@ is($set->size, 1, "->strengthen()");
 	my $set = set();
 	$set->weaken;
 	$set->insert($referant);
+	my $magic = Set::Object::get_magic($referant);
+	is_deeply($magic, [$$set], "Magic detected");
     }
-
-    # well, we can't tell that the set died normally, but nevermind
-    # that.
-
+    is(Set::Object::get_magic($referant), undef, "Magic removed");
 }
-pass("referant object died successfully");
