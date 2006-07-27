@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-use Test::More tests => 29;
+use Test::More tests => 26;
 use Set::Object qw(set refaddr);
 use Storable qw(dclone);
 use strict;
@@ -147,15 +147,6 @@ is($set->size, 1, "->strengthen()");
     is($object{y}, "Yep, that's enough, world",
        "tie magic not interefered with by _dispel_magic [reverse]");
 }
-
-require Set::Object::Weak;
-no strict 'subs';
-Set::Object::Weak->import(weak_set);
-is(Set::Object::Weak->new([])->size, 0, "Set::Object::Weak->new()");
-is(weak_set([])->size, 0, "weak_set()");
-
-# ok, may as well put it there too
-is(Set::Object::weak_set(["ø"]), 0, "Set::Object::weak_set");
 
 {package Tie::Scalar::Null;
  sub TIEHASH {
