@@ -165,6 +165,7 @@ bool iset_includes_scalar(ISET* s, SV* sv)
   }
 }
 
+void _cast_magic(ISET* s, SV* sv);
 
 int iset_insert_one(ISET* s, SV* rv)
 {
@@ -269,6 +270,8 @@ int iset_insert_one(ISET* s, SV* rv)
 	return ins;
 }
 
+void _dispel_magic(ISET* s, SV* sv);
+
 void iset_clear(ISET* s)
 {
 	BUCKET* bucket_iter = s->bucket;
@@ -357,6 +360,7 @@ _dispel_magic(ISET* s, SV* sv) {
 	   if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
 	     if (last) {
 	       last->mg_moremagic = mg->mg_moremagic;
+	       Safefree(mg);
 	       break;
 	     } else if (mg->mg_moremagic) {
 	       SvMAGIC(sv) = mg->mg_moremagic;
@@ -418,8 +422,8 @@ _spell_effect(pTHX_ SV *sv, MAGIC *mg)
     while (i >= 0) {
         SPELL_DEBUG("_spell_effect %d", i);
 	if (svp[i] && SvIV(svp[i])) {
-	  SPELL_DEBUG("_spell_effect i = %d, SV = 0x%.8x", i, svp[i]);
 	  ISET* s = INT2PTR(ISET*, SvIV(svp[i]));
+	  SPELL_DEBUG("_spell_effect i = %d, SV = 0x%.8x", i, svp[i]);
 	  if (!s->is_weak)
 	    Perl_croak(aTHX_ "panic: set_object_magic_killbackrefs (flags=%"UVxf")",
 		       (UV)SvFLAGS(svp[i]));
