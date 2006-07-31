@@ -1,6 +1,16 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.17, 1 Aug 2006
+
+=over
+
+=item *
+
+fix compile problem affecting some platforms
+
+=back
+
 =head1 1.16, 18 Jul 2006
 
 =over
