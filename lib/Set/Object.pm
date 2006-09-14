@@ -309,6 +309,26 @@ test suite and send it to me, otherwise it could get pulled.
 
 =back
 
+=head1 SERIALIZATION
+
+It is possible to serialize C<Set::Object> objects via L<Storable> and
+duplicate via C<dclone>; such support was added in release 1.04.  As
+of C<Set::Object> version 1.15, it is possible to freeze scalar items,
+too.
+
+However, the support for freezing scalar items introduced a backwards
+incompatibility.  Earlier versions than 1.15 will C<thaw> sets frozen
+using Set::Object 1.15 and later as a set with one item - an array
+that contains the actual members.
+
+Additionally, version 1.15 had a bug that meant that it would not
+detect C<freeze> protocol upgrades, instead reverting to pre-1.15
+behaviour.
+
+C<Set::Object> 1.16 and above are capable of dealing correctly with
+all serialized forms, as well as correctly aborting if a "newer"
+C<freeze> protocol is detected during C<thaw>.
+
 =head1 PERFORMANCE
 
 The following benchmark compares C<Set::Object> with using a hash to
@@ -395,7 +415,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set );
-$VERSION = '1.17';
+$VERSION = '1.18';
 
 bootstrap Set::Object $VERSION;
 

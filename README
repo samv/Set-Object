@@ -1,13 +1,13 @@
-README for Set::Object 1.17
+README for Set::Object 1.18
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-There used to be a reproduction of the man page here, but that's just
-silly.
+Set::Object provides for sets of Perl objects - scalars and references.
 
-So now I guess I should put the normal things here, like how to
-install the module, etc.
+INSTALLATION
 
-Oh, look, just go and read another module's README.  It's just the
-same, honest.  Nothing to see here, move along.
+To install this module type the following:
 
-Cheers,
-Sam.
+   perl Makefile.PL
+   make
+   make test
+   su root -c "make install"
+

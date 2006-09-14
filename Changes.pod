@@ -1,6 +1,23 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.18, 14 Sep 2006
+
+=over
+
+=item *
+
+We could only build on gcc due to the use of variadic macros.
+use C<#ifdef> to hide this GCC-specific extension (used only for
+debugging) from non-GCC compilers.
+
+=item *
+
+Add note to man page on compatibility of C<Storable> serializations of
+C<Set::Object>s between revisions.
+
+=back
+
 =head1 1.17, 1 Aug 2006
 
 =over
