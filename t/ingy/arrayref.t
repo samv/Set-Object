@@ -1,6 +1,6 @@
 #  -*- perl -*-
 
-use Set::Object;
+use Set::Object qw(set);
 use Test::More tests => 15;
 
 my $bob = bless {}, "Bob";
