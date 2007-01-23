@@ -67,11 +67,21 @@ placed into a Set::Object, scalars that are inserted will be flattened
 into strings, so will lose any magic (eg, tie) or other special bits
 that they went in with; only strings come out.
 
-=head1 CLASS METHODS
+=head1 CONSTRUCTORS
 
-=head2 new( [I<list>] )
+=head2 Set::Object->new( [I<list>] )
 
 Return a new C<Set::Object> containing the elements passed in I<list>.
+
+=head2 C<set(@members)>
+
+Return a new C<Set::Object> filled with C<@members>.  You have to
+explicitly import this method.
+
+=head2 C<weak_set()>
+
+Return a new C<Set::Object::Weak>, filled with C<@members>.  You have
+to explicitly import this method.
 
 =head1 INSTANCE METHODS
 
@@ -134,9 +144,22 @@ of magic.  B<Use with caution>.  If you get segfaults when you use
 C<weaken>, please reduce your problem to a test script before
 submission.
 
+B<New:> as of Set::Object 1.19, you may use the C<weak_set> function
+to make weak sets, or C<Set::Object::Weak-E<gt>new>, or import the
+C<set> constructor from C<Set::Object::Weak> instead.  See
+L<Set::Object::Weak> for more.
+
+B<Note to people sub-classing C<Set::Object>:> this method re-blesses
+the invocant to C<Set::Object::Weak>.  Override the method C<weak_pkg>
+in your sub-class to control this behaviour.
+
 =head2 strengthen
 
 Turns a weak set back into a normal one.
+
+B<Note to people sub-classing C<Set::Object>:> this method re-blesses
+the invocant to C<Set::Object>.  Override the method C<strong_pkg> in
+your sub-class to control this behaviour.
 
 =head2 invert( [I<list>] )
 
@@ -390,7 +413,8 @@ and/or modified under the terms of the Perl Artistic License
 
 Portions Copyright (c) 2003 - 2005, Sam Vilain.  Same license.
 
-Portions Copyright (c) 2006, Catalyst IT (NZ) Limited.  Same license.
+Portions Copyright (c) 2006, 2007, Catalyst IT (NZ) Limited.  Same
+license.
 
 =head1 SEE ALSO
 
@@ -414,8 +438,8 @@ require AutoLoader;
 # Do not simply export all your public functions/methods/constants.
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
-		 refaddr is_overloaded is_object is_key set );
-$VERSION = '1.18';
+		 refaddr is_overloaded is_object is_key set weak_set );
+$VERSION = '1.19';
 
 bootstrap Set::Object $VERSION;
 
@@ -860,7 +884,7 @@ sub STORABLE_freeze {
     return ("v3-" . ($obj->is_weak ? "w" : "s"), [ $obj->members ]);
 }
 
-use Devel::Peek qw(Dump);
+#use Devel::Peek qw(Dump);
 
 sub STORABLE_thaw {
     #print Dump $_ foreach (@_);
@@ -947,7 +971,7 @@ sub is_disjoint {
     return !($self*$other)->size;
 }
 
-use Data::Dumper;
+#use Data::Dumper;
 sub as_string_callback {
     shift;
     if ( @_ ) {
@@ -978,6 +1002,32 @@ sub member {
 
 sub set {
     __PACKAGE__->new(@_);
+}
+sub weak_set {
+    my $self = __PACKAGE__->new();
+    $self->weaken;
+    $self->insert(@_);
+    return $self;
+}
+
+require Set::Object::Weak;
+sub weaken {
+    my $self = shift;
+    $self->_weaken;
+    bless $self, $self->weak_pkg;
+}
+
+sub strengthen {
+    my $self = shift;
+    $self->_strengthen;
+    bless $self, $self->strong_pkg;
+}
+
+sub weak_pkg {
+    "Set::Object::Weak";
+}
+sub strong_pkg {
+    "Set::Object";
 }
 1;
 

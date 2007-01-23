@@ -818,6 +818,7 @@ DESTROY(self)
       iset_clear(s);
       if (s->flat) {
 	hv_undef(s->flat);
+	SvREFCNT_dec(s->flat);
       }
       Safefree(s);
       
@@ -833,7 +834,7 @@ is_weak(self)
    OUTPUT: RETVAL
 
 void
-weaken(self)
+_weaken(self)
    SV* self
 
    CODE:
@@ -849,7 +850,7 @@ weaken(self)
       _fiddle_strength(s, 0);
 
 void
-strengthen(self)
+_strengthen(self)
    SV* self
 
    CODE:
@@ -931,6 +932,20 @@ CODE:
   magic = newRV_inc(mg->mg_obj);
   PUSHs(magic);
   XSRETURN(1);
+
+SV*
+get_flat(sv)
+     SV* sv
+PROTOTYPE: $
+CODE:
+  ISET* s = INT2PTR(ISET*, SvIV(SvRV(sv)));
+  if (s->flat) {
+    RETVAL = newRV_inc(s->flat);
+  } else {
+    XSRETURN_UNDEF;
+  }
+OUTPUT:
+  RETVAL
 
 char *
 blessed(sv)

@@ -1,6 +1,27 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.19, 23 Jan 2007
+
+=over
+
+=item *
+
+remove bogus inclusions of Data::Dumper and Devel::Peek
+
+=item *
+
+New class C<Set::Object::Weak>, which all weak sets should get
+re-blessed into when you call C<-E<gt>weaken>.  Also added alternative
+methods of constructing weak sets.
+
+=item *
+
+Fix a memory leak with scalar members (the internal hash used to store
+the items was never being freed).  RT#24508.
+
+=back
+
 =head1 1.18, 14 Sep 2006
 
 =over

@@ -8,6 +8,8 @@ WriteMakefile(
     'LIBS'	=> [''],   # e.g., '-lm' 
     'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
     'INC'	=> '',     # e.g., '-I/usr/include/other' 
-    PM => {'lib/Set/Object.pm' => '$(INST_LIBDIR)/Object.pm'},
-    test => { TESTS => join(' ', glob('t/object/*.t'), glob('t/scalar/*.t')) },
+    PM => {'lib/Set/Object.pm' => '$(INST_LIBDIR)/Object.pm',
+	   'lib/Set/Object/Weak.pm' => '$(INST_LIBDIR)/Object/Weak.pm',
+	  },
+    test => { TESTS => join(' ', glob('t/*/*.t')) },
 );
