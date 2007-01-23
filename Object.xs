@@ -932,6 +932,20 @@ CODE:
   PUSHs(magic);
   XSRETURN(1);
 
+SV*
+get_flat(sv)
+     SV* sv
+PROTOTYPE: $
+CODE:
+  ISET* s = INT2PTR(ISET*, SvIV(SvRV(sv)));
+  if (s->flat) {
+    RETVAL = newRV_inc(s->flat);
+  } else {
+    XSRETURN_UNDEF;
+  }
+OUTPUT:
+  RETVAL
+
 char *
 blessed(sv)
     SV * sv
