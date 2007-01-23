@@ -818,6 +818,7 @@ DESTROY(self)
       iset_clear(s);
       if (s->flat) {
 	hv_undef(s->flat);
+	SvREFCNT_dec(s->flat);
       }
       Safefree(s);
       
