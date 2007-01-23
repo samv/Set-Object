@@ -4,6 +4,7 @@ MANIFEST
 README
 META.yml                                Module meta-data (added by MakeMaker)
 lib/Set/Object.pm
+lib/Set/Object/Weak.pm
 Object.xs
 t/object/equal.t
 t/object/clear.t
@@ -23,6 +24,7 @@ t/object/union.t
 t/object/abuse.t
 t/object/properties.t
 t/object/storable.t
+t/object/weakref.t
 
 t/scalar/basic_overload.t
 t/scalar/basic.t
@@ -43,5 +45,7 @@ t/scalar/union.t
 t/scalar/unique.t
 
 t/ingy/arrayref.t
+
+t/misc/leaks.t
 
 ppport.h
