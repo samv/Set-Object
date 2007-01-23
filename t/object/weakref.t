@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-use Test::More tests => 29;
+use Test::More tests => 36;
 use Set::Object qw(set refaddr);
 use Storable qw(dclone);
 use strict;
@@ -26,10 +26,13 @@ use Devel::Peek;
     my $item = MyClass->new;
     $set->insert($item);
     is($set->size, 1, "sanity check 1");
+    isa_ok($set, "Set::Object", "it's a Set::Object");
+    ok(!$set->isa("Set::Object::Weak"), "but not weak");
     #diag(Dump($item));
     $set->weaken;
     #diag(Dump($item));
     is($set->size, 1, "weaken not too eager");
+    isa_ok($set, "Set::Object::Weak", "it's now a Set::Object::Weak");
 }
 
 is($MyClass::c, 0, "weaken makes refcnt lower");
@@ -73,9 +76,12 @@ is($clone->{who}->size, 0, "weaken preserved over dclone()");
 	is($set->size, 2, "sanity check 4");
     }
     is($set->size, 1, "sanity check 5");
+    isa_ok($set, "Set::Object::Weak", "starts as a Set::Object::Weak");
     $set->strengthen;
 }
 
+isa_ok($set, "Set::Object", "it's a Set::Object");
+ok(!$set->isa("Set::Object::Weak"), "but not weak");
 is($set->size, 1, "->strengthen()");
 
 # test that weak sets can expire before their referants
@@ -151,11 +157,18 @@ is($set->size, 1, "->strengthen()");
 require Set::Object::Weak;
 no strict 'subs';
 Set::Object::Weak->import(weak_set);
-is(Set::Object::Weak->new([])->size, 0, "Set::Object::Weak->new()");
-is(weak_set([])->size, 0, "weak_set()");
+my $s = Set::Object::Weak->new([]);
+is($s->size, 0, "Set::Object::Weak->new()");
+$s = weak_set([]);
+is($s->size, 0, "weak_set()");
 
 # ok, may as well put it there too
-is(Set::Object::weak_set(["ø"]), 0, "Set::Object::weak_set");
+my $ws = Set::Object::weak_set(["ø"]);
+is($ws->size, 0, "Set::Object::weak_set");
+
+# test example in the SYNOPSIS
+$ws = Set::Object::Weak->new( 0, "", {}, [], (bless {}, "Object") );
+is($ws->size, 2, "made a weak set");
 
 {package Tie::Scalar::Null;
  sub TIEHASH {

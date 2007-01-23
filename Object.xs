@@ -834,7 +834,7 @@ is_weak(self)
    OUTPUT: RETVAL
 
 void
-weaken(self)
+_weaken(self)
    SV* self
 
    CODE:
@@ -850,7 +850,7 @@ weaken(self)
       _fiddle_strength(s, 0);
 
 void
-strengthen(self)
+_strengthen(self)
    SV* self
 
    CODE:
