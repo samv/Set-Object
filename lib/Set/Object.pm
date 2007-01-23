@@ -860,7 +860,7 @@ sub STORABLE_freeze {
     return ("v3-" . ($obj->is_weak ? "w" : "s"), [ $obj->members ]);
 }
 
-use Devel::Peek qw(Dump);
+#use Devel::Peek qw(Dump);
 
 sub STORABLE_thaw {
     #print Dump $_ foreach (@_);
@@ -947,7 +947,7 @@ sub is_disjoint {
     return !($self*$other)->size;
 }
 
-use Data::Dumper;
+#use Data::Dumper;
 sub as_string_callback {
     shift;
     if ( @_ ) {
