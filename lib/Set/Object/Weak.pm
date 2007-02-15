@@ -79,7 +79,7 @@ add the passed members into it.
 =cut
 
 sub set {
-    __PACKAGE__->new();
+    __PACKAGE__->new(@_);
 }
 
 1;
