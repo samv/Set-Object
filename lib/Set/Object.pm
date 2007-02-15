@@ -153,6 +153,10 @@ B<Note to people sub-classing C<Set::Object>:> this method re-blesses
 the invocant to C<Set::Object::Weak>.  Override the method C<weak_pkg>
 in your sub-class to control this behaviour.
 
+=head2 is_weak
+
+Returns a true value if this set is a weak set.
+
 =head2 strengthen
 
 Turns a weak set back into a normal one.
@@ -178,6 +182,20 @@ Empty this C<Set::Object>.
 
 Return a textual Smalltalk-ish representation of the C<Set::Object>.
 Also available as overloaded operator "".
+
+=head2 equal( I<set> )
+
+Returns a true value if I<set> contains exactly the same members as
+the invocant.
+
+Also available as overloaded operator C<==> (or C<eq>).
+
+=head2 not_equal( I<set> )
+
+Returns a false value if I<set> contains exactly the same members as
+the invocant.
+
+Also available as overloaded operator C<!=> (or C<ne>).
 
 =head2 intersection( [I<list>] )
 
@@ -230,6 +248,11 @@ Also available as operator C<E<gt>=>.
 
 Return C<true> if this C<Set::Object> is a proper superset of I<set>
 Also available as operator C<E<gt>>.
+
+=head2 is_null( I<set> )
+
+Returns a true value if this set does not contain any members, that
+is, if its size is zero.
 
 =head1 Set::Scalar compatibility methods
 
@@ -329,6 +352,34 @@ pointers to the actual C<ISET> structure.  Whatever you do don't
 change the array :).  This is used only by the test suite, and if you
 find it useful for something then you should probably conjure up a
 test suite and send it to me, otherwise it could get pulled.
+
+=back
+
+=head1 CLASS METHODS
+
+These class methods are probably only interesting to those
+sub-classing C<Set::Object>.
+
+=over
+
+=item strong_pkg
+
+When a set that was already weak is strengthened using
+C<-E<gt>strengthen>, it gets re-blessed into this package.
+
+=item weak_pkg
+
+When a set that was NOT already weak is weakened using
+C<-E<gt>weaken>, it gets re-blessed into this package.
+
+=item tie_array_pkg
+
+When the object is accessed as an array, tie the array into this
+package.
+
+=item tie_hash_pkg
+
+When the object is accessed as a hash, tie the hash into this package.
 
 =back
 
@@ -439,7 +490,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set weak_set );
-$VERSION = '1.19';
+$VERSION = '1.20';
 
 bootstrap Set::Object $VERSION;
 
@@ -959,7 +1010,12 @@ sub compare {
 	    }
 	}
     } else {
-	return "disjoint";
+	if ($self->size || $other->size) {
+	    return "disjoint";
+	} else {
+	    # both sets are empty
+	    return "equal";
+	}
     }
 }
 

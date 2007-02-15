@@ -47,5 +47,7 @@ t/scalar/unique.t
 t/ingy/arrayref.t
 
 t/misc/leaks.t
+t/misc/pod.t
+t/misc/pod_coverage.t
 
 ppport.h

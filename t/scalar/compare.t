@@ -10,7 +10,7 @@ my $x = Set::Object->new(qw(b c d));
 my $n = Set::Object->new(qw());
 my $o = Set::Object->new(qw());
 
-print "1..23\n";
+print "1..24\n";
 
 print "not " unless $t == $u;
 print "ok 1\n";
@@ -84,6 +84,10 @@ print "ok 22\n";
   print "not " unless @d == 1 && $d[0];
   print "ok 23\n";
 }
+
+# [cpan #24965]
+print "not " unless $n->compare($o) eq 'equal';
+print "ok 24\n";
 
 sub show {
     my $z = shift;
