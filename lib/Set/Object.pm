@@ -959,7 +959,12 @@ sub compare {
 	    }
 	}
     } else {
-	return "disjoint";
+	if ($self->size || $other->size) {
+	    return "disjoint";
+	} else {
+	    # both sets are empty
+	    return "equal";
+	}
     }
 }
 
