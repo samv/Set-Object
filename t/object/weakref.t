@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-use Test::More tests => 36;
+use Test::More tests => 37;
 use Set::Object qw(set refaddr);
 use Storable qw(dclone);
 use strict;
@@ -169,6 +169,9 @@ is($ws->size, 0, "Set::Object::weak_set");
 # test example in the SYNOPSIS
 $ws = Set::Object::Weak->new( 0, "", {}, [], (bless {}, "Object") );
 is($ws->size, 2, "made a weak set");
+
+$ws = Set::Object::Weak::set("one");
+is($ws->size, 1, "Set::Object::Weak::set() inserts its arguments");
 
 {package Tie::Scalar::Null;
  sub TIEHASH {
