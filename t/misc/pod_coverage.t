@@ -4,8 +4,8 @@ BEGIN {
     eval "use Test::Pod::Coverage tests => 2;";
     if ( $@ ) {
 	require Test::More;
-	Test::More::skip_all ("Test::Pod::Coverage required for "
-			      ."testing POD coverage");
+	Test::More::plan(skip_all => ("Test::Pod::Coverage required for "
+			               ."testing POD coverage"));
 	exit;
     }
 }

@@ -1,6 +1,17 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.21, 17 Feb 2007
+
+=over
+
+=item *
+
+Fix false negative when Test::Pod::Coverage isn't installed.  Reported
+by Anna Bernathova of SuSE.
+
+=back
+
 =head1 1.20, 16 Feb 2007
 
 =over
