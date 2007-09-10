@@ -79,7 +79,11 @@ add the passed members into it.
 =cut
 
 sub set {
-    __PACKAGE__->new(@_);
+    my $class = __PACKAGE__;
+    if (blessed $_[0] and $_[0]->isa("Set::Object")) {
+    	$class = "Set::Object";
+    }
+    $class->new(@_);
 }
 
 1;

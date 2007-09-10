@@ -505,7 +505,7 @@ sub as_string
     croak "Tried to use as_string on something other than a Set::Object"
 	unless (UNIVERSAL::isa($self, __PACKAGE__));
 
-   'Set::Object(' . (join ' ', sort { $a cmp $b }
+    ref($self).'(' . (join ' ', sort { $a cmp $b }
 		     $self->members) . ')'
 }
 
@@ -524,7 +524,7 @@ sub not_equal
 
 sub union
 {
-    Set::Object->new
+    $_[0]->set
 	    ( map { $_->members() }
 	      grep { UNIVERSAL::isa($_, __PACKAGE__) }
 	      @_ );
@@ -537,7 +537,7 @@ sub op_union
     if (ref $_[0]) {
 	$other = shift;
     } else {
-	$other = __PACKAGE__->new(shift);
+	$other = $self->set(shift);
     }
 
     croak("Tried to form union between Set::Object & "
@@ -551,14 +551,12 @@ sub op_union
 sub intersection
 {
    my $s = shift;
-   return Set::Object->new() unless $s;
-
-   my $rem = __PACKAGE__->new($s->members);
+   my $rem = $s->set($s->members);
 
    while ($s = shift)
    {
        if (!ref $s) {
-	   $s = __PACKAGE__->new($s);
+	   $s = $rem->new($s);
        }
 
        croak("Tried to form intersection between Set::Object & "
@@ -577,7 +575,7 @@ sub op_intersection
     if (ref $_[0]) {
 	$s2 = shift;
     } else {
-	$s2 = __PACKAGE__->new(shift);
+	$s2 = $s1->set(shift);
     }
     my $r = shift;
     if ( $r ) {
@@ -1057,6 +1055,9 @@ sub member {
 }
 
 sub set {
+    if (eval { $_[0]->isa(__PACKAGE__) }) {
+    	shift;
+    }
     __PACKAGE__->new(@_);
 }
 sub weak_set {
