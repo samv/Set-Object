@@ -602,9 +602,9 @@ sub difference
 
    my $s;
    if ( $r ) {
-       $s = Set::Object->new( grep { !$s1->includes($_) } $s2->members );
+       $s = $s2->set( grep { !$s1->includes($_) } $s2->members );
    } else {
-       $s = Set::Object->new( grep { !$s2->includes($_) } $s1->members );
+       $s = $s1->set( grep { !$s2->includes($_) } $s1->members );
    }
    $s;
 }
@@ -623,7 +623,7 @@ sub op_invert
 	  ."`$other'")
 	if ref $other and not UNIVERSAL::isa($other, __PACKAGE__);
 
-    my $result = Set::Object->new( $self->members() );
+    my $result = $self->set( $self->members() );
     $result->invert( $other->members() );
     return $result;
 
