@@ -78,6 +78,13 @@ Return a new C<Set::Object> containing the elements passed in I<list>.
 Return a new C<Set::Object> filled with C<@members>.  You have to
 explicitly import this method.
 
+B<New in Set::Object 1.22>: this function is now called as a method
+to return new sets the various methods that return a new set, such as
+C<-E<gt>intersection>, C<-E<gt>union>, etc and their overloaded
+counterparts.  The default method always returns C<Set::Object>
+objects, preserving previous behaviour and not second guessing the
+nature of your derived L<Set::Object> class.
+
 =head2 C<weak_set()>
 
 Return a new C<Set::Object::Weak>, filled with C<@members>.  You have
@@ -490,7 +497,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set weak_set );
-$VERSION = '1.21';
+$VERSION = '1.22';
 
 bootstrap Set::Object $VERSION;
 
@@ -505,7 +512,7 @@ sub as_string
     croak "Tried to use as_string on something other than a Set::Object"
 	unless (UNIVERSAL::isa($self, __PACKAGE__));
 
-   'Set::Object(' . (join ' ', sort { $a cmp $b }
+    ref($self).'(' . (join ' ', sort { $a cmp $b }
 		     $self->members) . ')'
 }
 
@@ -524,7 +531,7 @@ sub not_equal
 
 sub union
 {
-    Set::Object->new
+    $_[0]->set
 	    ( map { $_->members() }
 	      grep { UNIVERSAL::isa($_, __PACKAGE__) }
 	      @_ );
@@ -537,7 +544,7 @@ sub op_union
     if (ref $_[0]) {
 	$other = shift;
     } else {
-	$other = __PACKAGE__->new(shift);
+	$other = $self->set(shift);
     }
 
     croak("Tried to form union between Set::Object & "
@@ -551,14 +558,12 @@ sub op_union
 sub intersection
 {
    my $s = shift;
-   return Set::Object->new() unless $s;
-
-   my $rem = __PACKAGE__->new($s->members);
+   my $rem = $s->set($s->members);
 
    while ($s = shift)
    {
        if (!ref $s) {
-	   $s = __PACKAGE__->new($s);
+	   $s = $rem->new($s);
        }
 
        croak("Tried to form intersection between Set::Object & "
@@ -577,7 +582,7 @@ sub op_intersection
     if (ref $_[0]) {
 	$s2 = shift;
     } else {
-	$s2 = __PACKAGE__->new(shift);
+	$s2 = $s1->set(shift);
     }
     my $r = shift;
     if ( $r ) {
@@ -604,9 +609,9 @@ sub difference
 
    my $s;
    if ( $r ) {
-       $s = Set::Object->new( grep { !$s1->includes($_) } $s2->members );
+       $s = $s2->set( grep { !$s1->includes($_) } $s2->members );
    } else {
-       $s = Set::Object->new( grep { !$s2->includes($_) } $s1->members );
+       $s = $s1->set( grep { !$s2->includes($_) } $s1->members );
    }
    $s;
 }
@@ -625,7 +630,7 @@ sub op_invert
 	  ."`$other'")
 	if ref $other and not UNIVERSAL::isa($other, __PACKAGE__);
 
-    my $result = Set::Object->new( $self->members() );
+    my $result = $self->set( $self->members() );
     $result->invert( $other->members() );
     return $result;
 
@@ -1057,6 +1062,9 @@ sub member {
 }
 
 sub set {
+    if (eval { $_[0]->isa(__PACKAGE__) }) {
+    	shift;
+    }
     __PACKAGE__->new(@_);
 }
 sub weak_set {

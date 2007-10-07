@@ -25,6 +25,8 @@ t/object/abuse.t
 t/object/properties.t
 t/object/storable.t
 t/object/weakref.t
+t/object/SetSubClass.pm
+t/object/set_subclass.t
 
 t/scalar/basic_overload.t
 t/scalar/basic.t
