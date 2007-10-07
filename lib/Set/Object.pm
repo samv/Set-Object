@@ -78,6 +78,13 @@ Return a new C<Set::Object> containing the elements passed in I<list>.
 Return a new C<Set::Object> filled with C<@members>.  You have to
 explicitly import this method.
 
+B<New in Set::Object 1.22>: this function is now called as a method
+to return new sets the various methods that return a new set, such as
+C<-E<gt>intersection>, C<-E<gt>union>, etc and their overloaded
+counterparts.  The default method always returns C<Set::Object>
+objects, preserving previous behaviour and not second guessing the
+nature of your derived L<Set::Object> class.
+
 =head2 C<weak_set()>
 
 Return a new C<Set::Object::Weak>, filled with C<@members>.  You have
