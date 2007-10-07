@@ -1,5 +1,19 @@
 
+=encoding utf8
+
 =head1 REVISION HISTORY FOR Set::Object
+
+=head1 1.22, 8 Oct 2007
+
+=over
+
+=item *
+
+Sub-classing interface added; it is now much easier to make
+L<Set::Object> subclasses that return objects other than more
+L<Set::Object>s when subclassing.  From Brían Mach Aon Innéirghthe.
+
+=back
 
 =head1 1.21, 17 Feb 2007
 
