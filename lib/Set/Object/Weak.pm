@@ -29,6 +29,7 @@ use base qw(Set::Object);  # boo hiss no moose::role yet I hear you say
 
 use base qw(Exporter);     # my users would hate me otherwise
 use vars qw(@ISA @EXPORT_OK);
+use Set::Object qw(blessed);
 
 our @EXPORT_OK = qw(weak_set set);
 
