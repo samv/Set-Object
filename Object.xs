@@ -829,7 +829,7 @@ is_weak(self)
    CODE:
       ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
 
-      RETVAL = s->is_weak;
+      RETVAL = !!s->is_weak;
 
    OUTPUT: RETVAL
 
