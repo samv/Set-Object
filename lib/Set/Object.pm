@@ -99,7 +99,8 @@ Add items to the C<Set::Object>.
 Adding the same object several times is not an error, but any
 C<Set::Object> will contain at most one occurence of the same object.
 
-Returns the number of elements that were actually added.
+Returns the number of elements that were actually added.  As of
+Set::Object 1.23, C<undef> will not insert.
 
 =head2 includes( [I<list>] )
 
@@ -110,6 +111,10 @@ Returns the number of elements that were actually added.
 Return C<true> if B<all> the objects in I<list> are members of the
 C<Set::Object>.  I<list> may be empty, in which case C<true> is
 always returned.
+
+As of Set::Object 1.23, C<undef> will never appear to be present in
+any set (even if the set contains the empty string).  Prior to 1.23,
+there would have been a run-time warning.
 
 =head2 member( [I<item>] )
 
@@ -139,6 +144,10 @@ Removing the same object more than once, or removing an object absent
 from the C<Set::Object> is not an error.
 
 Returns the number of elements that were actually removed.
+
+As of Set::Object 1.23, removing C<undef> is safe (but having an
+C<undef> in the passed in list does not increase the return value,
+because it could never be in the set)
 
 =head2 weaken
 
@@ -286,7 +295,6 @@ Returns a true value if the two sets have no common items.
 Allows you to define a custom stringify function.  This is only a
 class method.  If you want anything fancier than this, you should
 sub-class Set::Object.
-
 
 
 =head1 FUNCTIONS
@@ -497,7 +505,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set weak_set );
-$VERSION = '1.22';
+$VERSION = '1.23';
 
 bootstrap Set::Object $VERSION;
 
