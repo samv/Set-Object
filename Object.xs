@@ -99,6 +99,9 @@ int iset_insert_scalar(ISET* s, SV* sv)
     s->flat = newHV();
   }
 
+  if (!SvOK(sv))
+     return 0;
+
   //SvGETMAGIC(sv);
   key = SvPV(sv, len);
 
@@ -497,7 +500,11 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
       BUCKET* bucket;
 
   IF_DEBUG(_warn("removing scalar 0x%.8x from set 0x%.8x", el, s));
-	 
+
+  /* note an object being destroyed is not SvOK */
+  if (!spell_in_progress && !SvOK(el))
+    return 0;
+
   if (SvOK(el) && !SvROK(el)) {
     IF_DEBUG(_warn("scalar is not a ref (flags = 0x%.8x)", SvFLAGS(el)));
     if (s->flat) {
@@ -711,6 +718,9 @@ includes(self, ...)
       {
          SV* el = ST(item);
          SV* rv;
+
+	 if (!SvOK(el))
+	   XSRETURN_NO;
 
 	 if (!SvROK(el)) {
 	   IF_DEBUG(_warn("includes! el = %s", SvPV_nolen(el)));
