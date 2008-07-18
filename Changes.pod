@@ -3,6 +3,23 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.23, 18 Jul 2008
+
+=over
+
+=item *
+
+Make behaviour when dealing with items which were C<undef> defined.
+Previously it might segfault (or Bus Error on Mac OS X) on some
+operations and Perl versions, or result in an empty string being
+inserted.
+
+=item *
+
+Fix a minor compile problem on IRIX, reported by David Cantrell.
+
+=back
+
 =head1 1.22, 8 Oct 2007
 
 =over
