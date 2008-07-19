@@ -461,6 +461,10 @@ On my computer the results are:
      H lookup:  7 secs ( 7.14 usr  0.00 sys =  7.14 cpu)
      S lookup:  6 secs ( 5.94 usr  0.00 sys =  5.94 cpu)
 
+=head1 THREAD SAFETY
+
+This module has none.
+
 =head1 AUTHOR
 
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
@@ -505,7 +509,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set weak_set );
-$VERSION = '1.23';
+$VERSION = '1.24';
 
 bootstrap Set::Object $VERSION;
 

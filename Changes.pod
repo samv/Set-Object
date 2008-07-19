@@ -3,6 +3,22 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.24, 20 Jul 2008
+
+=over
+
+=item *
+
+Remove threads test which had inadvertantly slipped into the MANIFEST
+from source control, and add comprehensive documentation on the state
+of thread support in this module.
+
+=item *
+
+Correct other silly MANIFEST mistakes.
+
+=back
+
 =head1 1.23, 18 Jul 2008
 
 =over
