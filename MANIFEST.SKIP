@@ -5,5 +5,6 @@ MANIFEST.SKIP
 ^.git
 ^blib/
 ^pm_to_blib$
-^[^/]*\.tar.\w+$
+^[^/]*\.tar(.\w+)?$
 t/misc/threads.t
+Object.(c|o|bs)
