@@ -3,7 +3,6 @@ lib/Set/Object.pm
 lib/Set/Object/Weak.pm
 Makefile.PL
 MANIFEST			This list of files
-META.yml			Module meta-data (added by MakeMaker)
 Object.xs
 ppport.h
 README
@@ -51,3 +50,4 @@ t/scalar/storable.t
 t/scalar/symmdiff.t
 t/scalar/union.t
 t/scalar/unique.t
+META.yml                                 Module meta-data (added by MakeMaker)

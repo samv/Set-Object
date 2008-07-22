@@ -1,4 +1,12 @@
 use ExtUtils::MakeMaker;
+
+unless (eval { require Test::More; 1 }) {
+	print STDERR "*** Test::More is not installed, you will not be able to run the tests\n";
+}
+unless ($] >= 5.006001) {
+	print STDERR "*** This Perl version ($]) is not supported\n";
+}
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
@@ -11,5 +19,6 @@ WriteMakefile(
     PM => {'lib/Set/Object.pm' => '$(INST_LIBDIR)/Object.pm',
 	   'lib/Set/Object/Weak.pm' => '$(INST_LIBDIR)/Object/Weak.pm',
 	  },
+    PREREQ_PM => { 'Scalar::Util' => 0 },
     test => { TESTS => join(' ', glob('t/*/*.t')) },
 );

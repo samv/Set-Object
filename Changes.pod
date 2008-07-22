@@ -3,6 +3,17 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.25, 22 Jul 2008
+
+=over
+
+=item *
+
+Portability: support Perls before 5.7.3, and make this dependency
+explicit in the F<Makefile.PL>
+
+=back
+
 =head1 1.24, 20 Jul 2008
 
 =over
