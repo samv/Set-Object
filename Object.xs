@@ -27,7 +27,11 @@ extern "C" {
 // for debugging weakref-related functions
 #define IF_SPELL_DEBUG(e)
 
+#if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2))
 #define SET_OBJECT_MAGIC_backref (char)0x9f
+#else
+#define SET_OBJECT_MAGIC_backref (char)0x7e
+#endif
 
 typedef struct _BUCKET
 {
@@ -450,7 +454,11 @@ _cast_magic(ISET* s, SV* sv) {
     SV ** svp;
     int how = 0;
     I32 i,l,free;
+#if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2) )
     how = 0x9f; // (int)SET_OBJECT_MAGIC_backref;
+#else
+    how = 0x7e; // '~'
+#endif
 
     mg = _detect_magic(sv);
     if (mg) {
@@ -460,7 +468,13 @@ _cast_magic(ISET* s, SV* sv) {
     else {
       wand=newAV();
       IF_SPELL_DEBUG(_warn("sv_magicext(0x%.8x, 0x%.8x, %ld, 0x%.8x, NULL, 0)", sv, wand, how, vtable));
+#if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2) )
       sv_magicext(sv, wand, how, vtable, NULL, 0);
+#else
+      sv_magic(sv, wand, how, NULL, 0);
+      mg = mg_find(sv, SET_OBJECT_MAGIC_backref);
+      mg->mg_virtual = &SET_OBJECT_vtbl_backref;
+#endif
       SvRMAGICAL_on(sv);
     }
 
