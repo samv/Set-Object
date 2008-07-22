@@ -2,7 +2,6 @@
 
 use Test::More tests => 37;
 use Set::Object qw(set refaddr);
-use Storable qw(dclone);
 use strict;
 
 my $set = set();
@@ -53,7 +52,11 @@ $structure->{who}->weaken;
 
 #diag("now cloning");
 
-my $clone = dclone $structure;
+SKIP:{
+unless (eval { require Storable; 1 }) {
+   skip "Storable not installed", 5;
+}
+my $clone = Storable::dclone $structure;
 
 isnt(refaddr($structure->{bob}), refaddr($clone->{bob}), "sanity check 2");
 isnt(${$structure->{who}}, ${$clone->{who}}, "sanity check 3");
@@ -64,6 +67,7 @@ is(($clone->{who}->members)[0], $clone->{bob}, "Set contents preserved");
 delete $clone->{bob};
 
 is($clone->{who}->size, 0, "weaken preserved over dclone()");
+}
 
 # test strengthen, too
 {
