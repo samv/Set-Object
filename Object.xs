@@ -469,12 +469,13 @@ _cast_magic(ISET* s, SV* sv) {
       wand=newAV();
       IF_SPELL_DEBUG(_warn("sv_magicext(0x%.8x, 0x%.8x, %ld, 0x%.8x, NULL, 0)", sv, wand, how, vtable));
 #if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2) )
-      sv_magicext(sv, wand, how, vtable, NULL, 0);
+      mg = sv_magicext(sv, wand, how, vtable, NULL, 0);
 #else
       sv_magic(sv, wand, how, NULL, 0);
       mg = mg_find(sv, SET_OBJECT_MAGIC_backref);
       mg->mg_virtual = &SET_OBJECT_vtbl_backref;
 #endif
+      mg->mg_flags |= MGf_REFCOUNTED;
       SvRMAGICAL_on(sv);
     }
 
