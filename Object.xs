@@ -405,7 +405,8 @@ _fiddle_strength(ISET* s, int strong) {
 			       SvREFCNT(*el_iter)));
 	      }
 	      else {
-		_cast_magic(s, *el_iter);
+		if ( SvREFCNT(*el_iter) > 1 )
+		  _cast_magic(s, *el_iter);
 		SvREFCNT_dec(*el_iter);
 		IF_DEBUG(_warn("reduced RC of 0x%.8x to %d", *el_iter,
 			       SvREFCNT(*el_iter)));
@@ -503,6 +504,7 @@ _cast_magic(ISET* s, SV* sv) {
       IF_SPELL_DEBUG(_warn("casting self 0x%.8x to slot %d", self_svrv, free));
       svp[free] = self_svrv;
     }
+
     /*
     SvREFCNT_inc(self_svrv);
     */
