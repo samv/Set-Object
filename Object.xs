@@ -489,6 +489,8 @@ _cast_magic(ISET* s, SV* sv) {
 	if (s == o)
 	  return;
       } else {
+	if ( svp[i] ) SvREFCNT_dec(svp[i]);
+	svp[i] = NULL;
 	free = i;
       }
       i = i - 1;
