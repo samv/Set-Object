@@ -898,6 +898,7 @@ sub tie_array_pkg { "Set::Object::TieArray" };
 # to be an array index, and if so returns the index
 sub ish_int {
     my $i;
+    local $@;
     eval { $i = _ish_int($_[0]) };
 
     if ($@) {
@@ -1074,6 +1075,7 @@ sub member {
 }
 
 sub set {
+    local $@;
     if (eval { $_[0]->isa(__PACKAGE__) }) {
     	shift;
     }
