@@ -30,7 +30,7 @@ extern "C" {
 #if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2))
 #define SET_OBJECT_MAGIC_backref (char)0x9f
 #else
-#define SET_OBJECT_MAGIC_backref (char)0x7e
+#define SET_OBJECT_MAGIC_backref '~'
 #endif
 
 typedef struct _BUCKET
@@ -455,13 +455,8 @@ _cast_magic(ISET* s, SV* sv) {
     MGVTBL *vtable = &SET_OBJECT_vtbl_backref;
     MAGIC* mg;
     SV ** svp;
-    int how = 0;
+    int how = SET_OBJECT_MAGIC_backref;
     I32 i,l,free;
-#if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2) )
-    how = 0x9f; // (int)SET_OBJECT_MAGIC_backref;
-#else
-    how = 0x7e; // '~'
-#endif
 
     mg = _detect_magic(sv);
     if (mg) {
