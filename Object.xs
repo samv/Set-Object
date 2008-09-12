@@ -839,13 +839,16 @@ DESTROY(self)
 
    CODE:
       ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
-      IF_DEBUG(_warn("aargh!"));
-      iset_clear(s);
-      if (s->flat) {
-	hv_undef(s->flat);
-	SvREFCNT_dec(s->flat);
+      if ( s ) {
+	sv_setiv(SvRV(self), 0);
+	IF_DEBUG(_warn("aargh!"));
+	iset_clear(s);
+	if (s->flat) {
+	  hv_undef(s->flat);
+	  SvREFCNT_dec(s->flat);
+	}
+	Safefree(s);
       }
-      Safefree(s);
       
 int
 is_weak(self)
