@@ -337,10 +337,12 @@ _dispel_magic(ISET* s, SV* sv) {
     IF_SPELL_DEBUG(_warn("dispelling magic from 0x%.8x (self = 0x%.8x, mg = 0x%.8x)",
 			 sv, self_svrv, mg));
     if (mg) {
-       AV* wand = mg->mg_obj;
+       AV* wand = (AV *)mg->mg_obj;
        SV ** const svp = AvARRAY(wand);
        I32 i = AvFILLp(wand);
        int c = 0;
+
+       assert( SvTYPE(want) == SVt_PVAV );
 
        while (i >= 0) {
 	 if (svp[i] && SvIV(svp[i])) {
@@ -381,7 +383,7 @@ _dispel_magic(ISET* s, SV* sv) {
 }
 
 void
-_fiddle_strength(ISET* s, int strong) {
+_fiddle_strength(ISET* s, const int strong) {
 
       BUCKET* bucket_iter = s->bucket;
       BUCKET* bucket_last = bucket_iter + s->buckets;
@@ -464,13 +466,14 @@ _cast_magic(ISET* s, SV* sv) {
     mg = _detect_magic(sv);
     if (mg) {
       IF_SPELL_DEBUG(_warn("sv_magicext reusing wand 0x%.8x for 0x%.8x", wand, sv));
-      wand = mg->mg_obj;
+      wand = (AV *)mg->mg_obj;
+      assert( SvTYPE(wand) == SVt_PVAV );
     }
     else {
       wand=newAV();
       IF_SPELL_DEBUG(_warn("sv_magicext(0x%.8x, 0x%.8x, %ld, 0x%.8x, NULL, 0)", sv, wand, how, vtable));
 #if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2) )
-      mg = sv_magicext(sv, wand, how, vtable, NULL, 0);
+      mg = sv_magicext(sv, (SV *)wand, how, vtable, NULL, 0);
 #else
       sv_magic(sv, wand, how, NULL, 0);
       mg = mg_find(sv, SET_OBJECT_MAGIC_backref);
@@ -875,7 +878,7 @@ _weaken(self)
       if (s->is_weak)
         XSRETURN_UNDEF;
 
-	IF_DEBUG(_warn("weakening set (0x%.8x)", SvRV(self)));
+      IF_DEBUG(_warn("weakening set (0x%.8x)", SvRV(self)));
 
       s->is_weak = SvRV(self);
 
@@ -972,14 +975,14 @@ PROTOTYPE: $
 CODE:
   ISET* s = INT2PTR(ISET*, SvIV(SvRV(sv)));
   if (s->flat) {
-    RETVAL = newRV_inc(s->flat);
+    RETVAL = newRV_inc((SV *)s->flat);
   } else {
     XSRETURN_UNDEF;
   }
 OUTPUT:
   RETVAL
 
-char *
+const char *
 blessed(sv)
     SV * sv
 PROTOTYPE: $
@@ -995,7 +998,7 @@ CODE:
 OUTPUT:
     RETVAL
 
-char *
+const char *
 reftype(sv)
     SV * sv
 PROTOTYPE: $
