@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-use Test::More tests => 37;
+use Test::More qw(no_plan);
 use Set::Object qw(set refaddr);
 use strict;
 
@@ -197,3 +197,6 @@ is($ws->size, 1, "Set::Object::Weak::set() inserts its arguments");
      each %{$_[0]};
  }
 }
+
+$set = Set::Object::weak_set(["ø"]) + Set::Object::weak_set(["þ"]);
+is($set->size(), 2, "computations on sets don't care that they're weak");
