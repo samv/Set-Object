@@ -1,5 +1,7 @@
 use Set::Object;
 
+use Test::More tests => 5;
+
 require 't/object/Person.pm';
 package Person;
 
@@ -10,19 +12,12 @@ $bouviers = Set::Object->new($marge, $patty, $selma);
 $both = Set::Object->new($homer, $marge, $patty, $selma);
 $empty = Set::Object->new;
 
-print "1..5\n";
+::ok( $simpsons->union($bouviers) == $both, "union method" );
 
-print 'not ' unless $simpsons->union($bouviers) == $both;
-print "ok 1\n";
+::ok( $simpsons + $bouviers == $both, "op_union" );
 
-print 'not ' unless $simpsons + $bouviers == $both;
-print "ok 2\n";
+::ok( $bouviers + $simpsons == $both, "op union with ops reversed" );
 
-print 'not ' unless $bouviers + $simpsons == $both;
-print "ok 3\n";
+::ok( $simpsons + $simpsons == $simpsons, "union with self" );
 
-print 'not ' unless $simpsons + $simpsons == $simpsons;
-print "ok 4\n";
-
-print 'not ' unless $simpsons + $empty == $simpsons;
-print "ok 5\n";
+::ok( $simpsons + $empty == $simpsons, "union with empty set" );
