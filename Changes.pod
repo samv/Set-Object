@@ -3,6 +3,28 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.26, 13 Oct 2008
+
+=over
+
+=item *
+
+Methods which destroyed C<$@> due to internal use of C<eval> now
+properly call C<local($@)> (Yuval)
+
+=item *
+
+Fix a leak and a corner case with weak set magic, and squash some
+warnings (Yuval)
+
+=item *
+
+Define behaviour when dealing with return values from operations on
+weak sets.  No longer hard-coded "Set::Object" - may affect
+Set::Object sub-classes (Sam)
+
+=back
+
 =head1 1.25, 22 Jul 2008
 
 =over
