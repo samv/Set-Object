@@ -21,7 +21,14 @@ warnings (Yuval)
 
 Define behaviour when dealing with return values from operations on
 weak sets.  No longer hard-coded "Set::Object" - may affect
-Set::Object sub-classes (Sam)
+Set::Object sub-classes (Sam).
+
+=item *
+
+(post-release changelog entry) related to the previous change,
+Set::Object::Weak::set did not use to shift the invocant off the
+stack, which caused result sets to have the inserted sets as members.
+It now does, fixing this bug.
 
 =back
 
