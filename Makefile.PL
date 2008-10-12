@@ -11,6 +11,8 @@ unless ($] >= 5.006001) {
 # the contents of the Makefile that is written.
 WriteMakefile(
     'NAME'	=> 'Set::Object',
+    'AUTHOR'    => 'Jean-Louis Leroy and Sam Vilain',
+    'LICENSE'   => 'Artistic',
     'VERSION_FROM' => 'lib/Set/Object.pm', # finds $VERSION
     'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
     'LIBS'	=> [''],   # e.g., '-lm' 
