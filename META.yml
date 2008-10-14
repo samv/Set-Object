@@ -1,9 +1,10 @@
 --- #YAML:1.0
 name:                Set-Object
-version:             1.25
+version:             1.26
 abstract:            Unordered collections (sets) of Perl Objects
-license:             ~
-author:              ~
+license:             Artistic
+author:              
+    - Jean-Louis Leroy and Sam Vilain
 generated_by:        ExtUtils::MakeMaker version 6.42
 distribution_type:   module
 requires:     

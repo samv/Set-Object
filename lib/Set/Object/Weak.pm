@@ -82,7 +82,7 @@ add the passed members into it.
 sub set {
     my $class = __PACKAGE__;
     if (blessed $_[0] and $_[0]->isa("Set::Object")) {
-    	$class = "Set::Object";
+    	$class = (shift)->strong_pkg;
     }
     $class->new(@_);
 }
