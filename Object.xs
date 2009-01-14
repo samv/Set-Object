@@ -345,7 +345,7 @@ _dispel_magic(ISET* s, SV* sv) {
        assert( SvTYPE(wand) == SVt_PVAV );
 
        while (i >= 0) {
-	 if (svp[i] && SvIV(svp[i])) {
+	 if (svp[i] && SvIOK(svp[i]) && SvIV(svp[i])) {
 	   ISET* o = INT2PTR(ISET*, SvIV(svp[i]));
 	   if (s == o) {
 	     /*
@@ -429,7 +429,7 @@ _spell_effect(pTHX_ SV *sv, MAGIC *mg)
 
     while (i >= 0) {
         IF_SPELL_DEBUG(_warn("_spell_effect %d", i));
-	if (svp[i] && SvIV(svp[i])) {
+	if (svp[i] && SvIOK(svp[i]) && SvIV(svp[i])) {
 	  ISET* s = INT2PTR(ISET*, SvIV(svp[i]));
 	  IF_SPELL_DEBUG(_warn("_spell_effect i = %d, SV = 0x%.8x", i, svp[i]));
 	  if (!s->is_weak)
