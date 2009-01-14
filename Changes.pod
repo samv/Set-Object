@@ -20,6 +20,10 @@ A minor #define refactor (Yuval).
 Squash some long-standing warnings I had been ignoring for ages and
 Havard Eidnes prompted me to fix by logging an RT ticket for it.
 
+=item *
+
+Squash some global clean-up warnings.
+
 =back
 
 =head1 1.26, 13 Oct 2008
