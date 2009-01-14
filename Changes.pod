@@ -3,6 +3,20 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.27, 15 Jan 2009
+
+=over
+
+=item *
+
+Fix a typo that affected building against Perls with debugging enabled.
+
+=item *
+
+A minor #define refactor (Yuval).
+
+=back
+
 =head1 1.26, 13 Oct 2008
 
 =over
