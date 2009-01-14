@@ -337,7 +337,7 @@ _dispel_magic(ISET* s, SV* sv) {
     IF_SPELL_DEBUG(_warn("dispelling magic from 0x%.8x (self = 0x%.8x, mg = 0x%.8x)",
 			 sv, self_svrv, mg));
     if (mg) {
-       AV* wand = (AV *)mg->mg_obj;
+       SV* wand = (SV *)(mg->mg_obj);
        SV ** const svp = AvARRAY(wand);
        I32 i = AvFILLp(wand);
        int c = 0;
