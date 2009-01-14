@@ -342,7 +342,7 @@ _dispel_magic(ISET* s, SV* sv) {
        I32 i = AvFILLp(wand);
        int c = 0;
 
-       assert( SvTYPE(want) == SVt_PVAV );
+       assert( SvTYPE(wand) == SVt_PVAV );
 
        while (i >= 0) {
 	 if (svp[i] && SvIV(svp[i])) {
