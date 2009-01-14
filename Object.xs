@@ -47,7 +47,7 @@ typedef struct _ISET
         HV* flat;
 } ISET;
 
-#define ISET_HASH(el) ((I32) (el) >> 4)
+#define ISET_HASH(el) ((PTR2UV(el)) >> 4)
 
 #define ISET_INSERT(s, item) \
 	     ( SvROK(item) \
