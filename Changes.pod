@@ -3,6 +3,29 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.27, 15 Jan 2009
+
+=over
+
+=item *
+
+Fix a typo that affected building against Perls with debugging enabled.
+
+=item *
+
+A minor #define refactor (Yuval).
+
+=item *
+
+Squash some long-standing warnings I had been ignoring for ages and
+Havard Eidnes prompted me to fix by logging an RT ticket for it.
+
+=item *
+
+Squash some global clean-up warnings.
+
+=back
+
 =head1 1.26, 13 Oct 2008
 
 =over
@@ -21,7 +44,14 @@ warnings (Yuval)
 
 Define behaviour when dealing with return values from operations on
 weak sets.  No longer hard-coded "Set::Object" - may affect
-Set::Object sub-classes (Sam)
+Set::Object sub-classes (Sam).
+
+=item *
+
+(post-release changelog entry) related to the previous change,
+Set::Object::Weak::set did not use to shift the invocant off the
+stack, which caused result sets to have the inserted sets as members.
+It now does, fixing this bug.
 
 =back
 

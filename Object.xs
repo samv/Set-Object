@@ -30,7 +30,7 @@ extern "C" {
 #if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2))
 #define SET_OBJECT_MAGIC_backref (char)0x9f
 #else
-#define SET_OBJECT_MAGIC_backref (char)0x7e
+#define SET_OBJECT_MAGIC_backref '~'
 #endif
 
 typedef struct _BUCKET
@@ -47,7 +47,7 @@ typedef struct _ISET
         HV* flat;
 } ISET;
 
-#define ISET_HASH(el) ((I32) (el) >> 4)
+#define ISET_HASH(el) ((PTR2UV(el)) >> 4)
 
 #define ISET_INSERT(s, item) \
 	     ( SvROK(item) \
@@ -337,15 +337,15 @@ _dispel_magic(ISET* s, SV* sv) {
     IF_SPELL_DEBUG(_warn("dispelling magic from 0x%.8x (self = 0x%.8x, mg = 0x%.8x)",
 			 sv, self_svrv, mg));
     if (mg) {
-       AV* wand = (AV *)mg->mg_obj;
+       AV* wand = (void *)(mg->mg_obj);
        SV ** const svp = AvARRAY(wand);
        I32 i = AvFILLp(wand);
        int c = 0;
 
-       assert( SvTYPE(want) == SVt_PVAV );
+       assert( SvTYPE(wand) == SVt_PVAV );
 
        while (i >= 0) {
-	 if (svp[i] && SvIV(svp[i])) {
+	 if (svp[i] && SvIOK(svp[i]) && SvIV(svp[i])) {
 	   ISET* o = INT2PTR(ISET*, SvIV(svp[i]));
 	   if (s == o) {
 	     /*
@@ -429,7 +429,7 @@ _spell_effect(pTHX_ SV *sv, MAGIC *mg)
 
     while (i >= 0) {
         IF_SPELL_DEBUG(_warn("_spell_effect %d", i));
-	if (svp[i] && SvIV(svp[i])) {
+	if (svp[i] && SvIOK(svp[i]) && SvIV(svp[i])) {
 	  ISET* s = INT2PTR(ISET*, SvIV(svp[i]));
 	  IF_SPELL_DEBUG(_warn("_spell_effect i = %d, SV = 0x%.8x", i, svp[i]));
 	  if (!s->is_weak)
@@ -455,13 +455,8 @@ _cast_magic(ISET* s, SV* sv) {
     MGVTBL *vtable = &SET_OBJECT_vtbl_backref;
     MAGIC* mg;
     SV ** svp;
-    int how = 0;
+    int how = SET_OBJECT_MAGIC_backref;
     I32 i,l,free;
-#if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2) )
-    how = 0x9f; // (int)SET_OBJECT_MAGIC_backref;
-#else
-    how = 0x7e; // '~'
-#endif
 
     mg = _detect_magic(sv);
     if (mg) {
