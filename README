@@ -1,5 +1,5 @@
-README for Set::Object 1.21
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+README for Set::Object
+~~~~~~~~~~~~~~~~~~~~~~
 Set::Object provides for sets of Perl objects - scalars and references.
 
 INSTALLATION
