@@ -958,7 +958,6 @@ sub STORABLE_freeze {
 sub STORABLE_thaw {
     #print Dump $_ foreach (@_);
 
-    $DB::single = 1;
     if ( $_[2] ) {
 	if ( $_[2] eq "v2" ) {
 	    @_ = (@_[0,1], "", @{ $_[3] });
