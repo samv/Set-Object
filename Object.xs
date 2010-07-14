@@ -17,14 +17,14 @@ extern "C" {
 #define _warn warn
 #endif
 
-// for debugging object-related functions
+/* for debugging object-related functions */
 #define IF_DEBUG(e)
 
-// for debugging scalar-related functions
+/* for debugging scalar-related functions */
 #define IF_REMOVE_DEBUG(e)
 #define IF_INSERT_DEBUG(e)
 
-// for debugging weakref-related functions
+/* for debugging weakref-related functions */
 #define IF_SPELL_DEBUG(e)
 
 #if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2))
@@ -106,7 +106,6 @@ int iset_insert_scalar(ISET* s, SV* sv)
   if (!SvOK(sv))
      return 0;
 
-  //SvGETMAGIC(sv);
   key = SvPV(sv, len);
 
   IF_INSERT_DEBUG(_warn("iset_insert_scalar(%x): sv (%x, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
@@ -139,8 +138,6 @@ int iset_remove_scalar(ISET* s, SV* sv)
     return 0;
   }
 
-  //DEBUG("Checking for existance of %s", SvPV_nolen(sv));
-  //SvGETMAGIC(sv);
   IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%x): sv (%x, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
 
   key = SvPV(sv, len);
@@ -593,14 +590,12 @@ new(pkg, ...)
 	   SV* isv;
 	
 	   New(0, s, 1, ISET);
-	   //_warn("created set id = %x", s);
 	   s->elems = 0;
 	   s->bucket = 0;
 	   s->buckets = 0;
 	   s->flat = 0;
 	   s->is_weak = 0;
 
-	   // _warning: cast from pointer to integer of different size
 	   isv = newSViv( PTR2IV(s) );
 	   sv_2mortal(isv);
 
@@ -675,7 +670,6 @@ is_null(self)
 
    if (s->flat) {
      if (HvKEYS(s->flat)) {
-       //_warn("got some keys: %d\n", HvKEYS(s->flat));
        XSRETURN_UNDEF;
      }
    }
@@ -806,8 +800,6 @@ members(self)
 				  sv_bless(el, SvSTASH(*el_iter));
 				}
 				PUSHs(sv_2mortal(el));
-				//XPUSHs(el);
-				//PUSHs(el);
 			}
       }
 
@@ -820,7 +812,6 @@ members(self)
 	  PUSHs(HeSVKEY_force(he));
         }
       }
-//_warn("that's all, folks");
 
 void
 clear(self)
@@ -1016,10 +1007,6 @@ PROTOTYPE: $
 CODE:
 {
     if(SvROK(sv)) {
-      // Don't return undef if not a valid ref - return 0 instead
-      // (less "Use of uninitialised value..." messages)
-
-      // XSRETURN_UNDEF;
 	RETVAL = PTR2UV(SvRV(sv));
     } else {
       RETVAL = 0;
@@ -1036,42 +1023,41 @@ PROTOTYPE: $
 CODE:
   double dutch;
   int innit;
-  STRLEN lp;  // world famous in NZ
+  STRLEN lp;
   SV * MH;
-  // This function returns the integer value of a passed scalar, as
-  // long as the scalar can reasonably considered to already be a
-  // representation of an integer.  This means if you want strings to
-  // be interpreted as integers, you're going to have to add 0 to
-  // them.
+  /* This function returns the integer value of a passed scalar, as
+     long as the scalar can reasonably considered to already be a
+     representation of an integer.  This means if you want strings to
+     be interpreted as integers, you're going to have to add 0 to
+     them. */
 
   if (SvMAGICAL(sv)) {
-    // probably a tied scalar
-    //mg_get(sv);
+    /* probably a tied scalar */
     Perl_croak(aTHX_ "Tied variables not supported");
   }
 
   if (SvAMAGIC(sv)) {
-    // an overloaded variable.  need to actually call a function to
-    // get its value.
+    /* an overloaded variable.  need to actually call a function to
+       get its value. */
     Perl_croak(aTHX_ "Overloaded variables not supported");
   }
 
   if (SvNIOKp(sv)) {
-    // NOK - the scalar is a double
+    /* NOK - the scalar is a double */
 
     if (SvPOKp(sv)) {
-      // POK - the scalar is also a string.
+      /* POK - the scalar is also a string. */
 
-      // we have to be careful; a scalar "2am" or, even worse, "2e6"
-      // may satisfy this condition if it has been evaluated in
-      // numeric context.  Remember, we are testing that the value
-      // could already be considered an _integer_, and AFAIC 2e6 and
-      // 2.0 are floats, end of story.
+      /* we have to be careful; a scalar "2am" or, even worse, "2e6"
+         may satisfy this condition if it has been evaluated in
+         numeric context.  Remember, we are testing that the value
+         could already be considered an _integer_, and AFAIC 2e6 and
+         2.0 are floats, end of story. */
 
-      // So, we stringify the numeric part of the passed SV, turn off
-      // the NOK bit on the scalar, so as to perform a string
-      // comparison against the passed in value.  If it is not the
-      // same, then we almost certainly weren't given an integer.
+      /* So, we stringify the numeric part of the passed SV, turn off
+         the NOK bit on the scalar, so as to perform a string
+         comparison against the passed in value.  If it is not the
+         same, then we almost certainly weren't given an integer. */
 
       if (SvIOKp(sv)) {
 	MH = newSViv(SvIV(sv));
@@ -1087,7 +1073,7 @@ CODE:
     }
 
     if (SvNOKp(sv)) {
-      // How annoying - it's a double
+      /* How annoying - it's a double */
       dutch = SvNV(sv);
       if (SvIOKp(sv)) {
 	innit = SvIV(sv);
