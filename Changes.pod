@@ -3,6 +3,21 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.28, 22 Jul 2010
+
+=over
+
+=item *
+
+Fixed a portability concern for some platforms' C compilers (that do
+not support //-style comments) - RT#52690
+
+=item *
+
+Valid SIGNATURE file - RT#50492
+
+=back
+
 =head1 1.27, 15 Jan 2009
 
 =over
