@@ -305,16 +305,22 @@ Scalar::Util module, but there are a couple that provide functions not
 catered to by that module.
 
 Please use the versions in L<Scalar::Util> in preference to these
-functions.
+functions.  In fact, if you use these functions in your production
+code then you may have to rewrite it some day.  They are retained only
+because they are "mostly harmless".
 
 =over
 
 =item B<blessed>
 
+B<Do not use in production code>
+
 Returns a true value if the passed reference (RV) is blessed.  See
 also L<Acme::Holy>.
 
 =item B<reftype>
+
+B<Do not use in production code>
 
 A bit like the perl built-in C<ref> function, but returns the I<type>
 of reference; ie, if the reference is blessed then it returns what
@@ -323,11 +329,15 @@ blessed references.
 
 =item B<refaddr>
 
+B<Do not use in production code>
+
 Returns the memory address of a scalar.  B<Warning>: this is I<not>
 guaranteed to be unique for scalars created in a program; memory might
 get re-used!
 
 =item B<is_int>, B<is_string>, B<is_double>
+
+B<Do not use in production code>
 
 A quick way of checking the three bits on scalars - IOK (is_int), NOK
 (is_double) and POK (is_string).  Note that the exact behaviour of
@@ -338,9 +348,13 @@ with caution.
 
 =item B<is_overloaded>
 
+B<Do not use in production code>
+
 A quick way to check if an object has overload magic on it.
 
 =item B<ish_int>
+
+B<Deprecated and will be removed in 2014>
 
 This function returns true, if the value it is passed looks like it
 I<already is> a representation of an I<integer>.  This is so that you
@@ -349,17 +363,15 @@ index.
 
 =item B<is_key>
 
-This function returns true, if the value it is passed looks more like
-an I<index> to a collection than a I<value> of a collection.
+B<Deprecated and will be removed in 2014>
 
-But wait, you say - Set::Object has no indices, one of the fundamental
-properties of a Set is that it is an I<unordered collection>.  Which
-means I<no indices>.  Well, if this module were ever to be derived to
-be a more general multi-purpose collection, then this (and C<ish_int>)
-might be a good function to use to distinguish different types of
-indexes from values.
+This function returns true, if the value it is passed looks more like
+an I<index> to a collection than a I<value> of a collection.  Similar
+to the looks_like_number internal function, but weird.  Avoid.
 
 =item B<get_magic>
+
+B<Do not use in production code>
 
 Pass to a scalar, and get the magick wand (C<mg_obj>) used by the weak
 set implementation.  The return will be a list of integers which are
