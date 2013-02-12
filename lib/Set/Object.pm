@@ -934,7 +934,7 @@ sub is_key {
 	    return is_key(&$sub($_[0]));
 	} elsif ($sub = UNIVERSAL::can($_[0], '(""')) {
 	    return is_key(&$sub($_[0]));
-	} elsif ($sub = UNIVERAL::can($_[0], '(nomethod')) {
+	} elsif ($sub = UNIVERSAL::can($_[0], '(nomethod')) {
 	    return is_key(&$sub($_[0]));
 	} else {
 	    return undef;
