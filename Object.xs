@@ -370,7 +370,7 @@ _dispel_magic(ISET* s, SV* sv) {
 	       SvMAGIC(sv) = mg->mg_moremagic;
 	     } else {
 	       SvMAGIC(sv) = 0;
-	       SvAMAGIC_off(sv);
+	       SvMAGICAL_off(sv);
 	     }
 	   }
 	   last=mg;
