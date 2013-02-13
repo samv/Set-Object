@@ -358,23 +358,8 @@ _dispel_magic(ISET* s, SV* sv) {
 	 i--;
        }
        if (!c) {
-	 /* we should clear the magic, really. */
-	 MAGIC* last = 0;
-	 for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic) {
-	   if (mg->mg_type == SET_OBJECT_MAGIC_backref) {
-	     if (last) {
-	       last->mg_moremagic = mg->mg_moremagic;
-	       Safefree(mg);
-	       break;
-	     } else if (mg->mg_moremagic) {
-	       SvMAGIC(sv) = mg->mg_moremagic;
-	     } else {
-	       SvMAGIC(sv) = 0;
-	       SvMAGICAL_off(sv);
-	     }
-	   }
-	   last=mg;
-	 }
+         sv_unmagic(sv, SET_OBJECT_MAGIC_backref);
+         SvREFCNT_dec(wand);
        }
     }
 }

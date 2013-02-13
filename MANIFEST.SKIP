@@ -7,4 +7,5 @@ MANIFEST.SKIP
 ^pm_to_blib$
 ^[^/]*\.tar(.\w+)?$
 t/misc/threads.t
+t/misc/more_leaks.t
 Object.(c|o|bs)
