@@ -3,6 +3,27 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.29, 13 Feb 2013
+
+=over
+
+=item *
+
+Fixed a typo in a function which really shouldn't exist - RT#79653
+
+=item *
+
+Marked a couple of functions as deprecated for removal (including the
+above function).
+
+=item *
+
+Fixed the magic cleanup code to use the appropriate macro/function to
+clean up the magic list instead of trying to do it itself.
+Unsurprisingly, fixes a memory leak.  (RT#69967, also RT#67289)
+
+=back
+
 =head1 1.28, 22 Jul 2010
 
 =over
