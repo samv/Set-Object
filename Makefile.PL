@@ -10,17 +10,15 @@ unless ($] >= 5.006001) {
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
-    'NAME'	=> 'Set::Object',
-    'AUTHOR'    => 'Jean-Louis Leroy and Sam Vilain',
-    'LICENSE'   => 'Artistic',
-    'VERSION_FROM' => 'lib/Set/Object.pm', # finds $VERSION
-    'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
-    'LIBS'	=> [''],   # e.g., '-lm' 
-    'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
-    'INC'	=> '',     # e.g., '-I/usr/include/other' 
-    PM => {'lib/Set/Object.pm' => '$(INST_LIBDIR)/Object.pm',
-	   'lib/Set/Object/Weak.pm' => '$(INST_LIBDIR)/Object/Weak.pm',
-	  },
-    PREREQ_PM => { 'Scalar::Util' => 0 },
-    test => { TESTS => join(' ', glob('t/*/*.t')) },
+  'NAME'	=> 'Set::Object',
+  'VERSION_FROM' => 'lib/Set/Object.pm', # finds $VERSION
+  'AUTHOR'    => 'Jean-Louis Leroy and Sam Vilain',
+  'LICENSE'   => 'Artistic',
+  'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
+  'PREREQ_PM' => {
+    'Scalar::Util'    => 0,
+    'Test::LeakTrace' => 0,
+    'Test::More'      => 0
+  },
+  test => { TESTS => join(' ', glob('t/*/*.t')) },
 );
