@@ -38,6 +38,8 @@ extern "C" {
 #define SET_OBJECT_MAGIC_backref '~'
 #endif
 
+#define __PACKAGE__ "Set::Object"
+
 typedef struct _BUCKET
 {
 	SV** sv;
@@ -51,6 +53,31 @@ typedef struct _ISET
         SV* is_weak;
         HV* flat;
 } ISET;
+
+#ifdef USE_ITHREADS
+# define MY_CXT_KEY __PACKAGE__ "::_guts" XS_VERSION
+# ifndef MY_CXT_CLONE
+#  define MY_CXT_CLONE \
+    dMY_CXT_SV;                                                      \
+    my_cxt_t *my_cxtp = (my_cxt_t*)SvPVX(newSV(sizeof(my_cxt_t)-1)); \
+    Copy(INT2PTR(my_cxt_t*, SvUV(my_cxt_sv)), my_cxtp, 1, my_cxt_t); \
+    sv_setuv(my_cxt_sv, PTR2UV(my_cxtp))
+# endif
+
+typedef struct {
+  ISET *s;
+} my_cxt_t;
+
+STATIC perl_mutex iset_mutex;
+
+START_MY_CXT
+# define THR_LOCK   MUTEX_LOCK(&iset_mutex)
+# define THR_UNLOCK MUTEX_UNLOCK(&iset_mutex)
+
+#else
+# define THR_LOCK
+# define THR_UNLOCK
+#endif
 
 #define ISET_HASH(el) ((PTR2UV(el)) >> 4)
 
@@ -97,7 +124,6 @@ int insert_in_bucket(BUCKET* pb, SV* sv)
 
 		IF_DEBUG(_warn("inserting %p in bucket %p offset %ld", sv, pb, iter - pb->sv));
 	}
-	
 	return 1;
 }
 
@@ -106,6 +132,7 @@ int iset_insert_scalar(ISET* s, SV* sv)
   STRLEN len;
   char* key = 0;
 
+  THR_LOCK;
   if (!s->flat) {
     IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): creating scalar hash", s));
     s->flat = newHV();
@@ -115,25 +142,23 @@ int iset_insert_scalar(ISET* s, SV* sv)
      return 0;
 
   key = SvPV(sv, len);
-
   IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): sv (%p, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
 
   if (!hv_exists(s->flat, key, len)) {
-
     if (!hv_store(s->flat, key, len, &PL_sv_undef, 0)) {
       _warn("hv store failed[?] set=%p", s);
     }
 
     IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): inserted OK!", s));
-
+    THR_UNLOCK;
     return 1;
   }
   else {
     
     IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): already there!", s));
+    THR_UNLOCK;
     return 0;
   }
-
 }
 
 int iset_remove_scalar(ISET* s, SV* sv)
@@ -141,23 +166,24 @@ int iset_remove_scalar(ISET* s, SV* sv)
   STRLEN len;
   char* key = 0;
 
-  if (!s->flat) {
+  THR_LOCK;
+  if (!s->flat || !HvKEYS(s->flat)) {
     IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): shortcut for %p(str = '%s') (no hash)", s, sv, SvPV_nolen(sv)));
+    THR_UNLOCK;
     return 0;
   }
 
   IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): sv (%p, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
-
   key = SvPV(sv, len);
 
   if ( hv_delete(s->flat, key, len, 0) ) {
-
     IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): deleted key", s));
+    THR_UNLOCK;
     return 1;
 
   } else {
-
     IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): key not absent", s));
+    THR_UNLOCK;
     return 0;
   }
   
@@ -188,6 +214,7 @@ int iset_insert_one(ISET* s, SV* rv)
 	    Perl_croak(aTHX_ "Tried to insert a non-reference into a Set::Object");
 	};
 
+	THR_LOCK;
 	el = SvRV(rv);
 
 	if (!s->buckets)
@@ -277,6 +304,7 @@ int iset_insert_one(ISET* s, SV* rv)
 		}
 	}
 
+	THR_UNLOCK;
 	return ins;
 }
 
@@ -287,12 +315,13 @@ void iset_clear(ISET* s)
 	BUCKET* bucket_iter = s->bucket;
 	BUCKET* bucket_last = bucket_iter + s->buckets;
 
+	THR_LOCK;
 	for (; bucket_iter != bucket_last; ++bucket_iter)
 	{
 		SV **el_iter, **el_last;
 
 		if (!bucket_iter->sv)
-            continue;
+		  continue;
 
 		el_iter = bucket_iter->sv;
 		el_last = el_iter + bucket_iter->n;
@@ -327,6 +356,7 @@ void iset_clear(ISET* s)
 	s->bucket = 0;
 	s->buckets = 0;
 	s->elems = 0;
+	THR_UNLOCK;
 }
 
 
@@ -378,6 +408,7 @@ _dispel_magic(ISET* s, SV* sv) {
 void
 _fiddle_strength(ISET* s, const int strong) {
 
+      THR_LOCK;
       BUCKET* bucket_iter = s->bucket;
       BUCKET* bucket_last = bucket_iter + s->buckets;
 
@@ -408,6 +439,7 @@ _fiddle_strength(ISET* s, const int strong) {
 	      }
 	    }
       }
+      THR_UNLOCK;
 }
 
 int
@@ -518,7 +550,7 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
 
   if (SvOK(el) && !SvROK(el)) {
     IF_DEBUG(_warn("scalar is not a ref (flags = 0x%x)", SvFLAGS(el)));
-    if (s->flat && s->elems) {
+    if (s->flat) {
       IF_DEBUG(_warn("calling remove_scalar for %p", el));
       if (iset_remove_scalar(s, el))
 	return 1;
@@ -526,6 +558,7 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
     return 0;
   }
 
+  THR_LOCK;
   referant = (spell_in_progress ? el : SvRV(el));
   hash = ISET_HASH(referant);
   index = hash & (s->buckets - 1);
@@ -542,31 +575,28 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
   el_last = el_iter + bucket->n;
   IF_DEBUG(_warn("remove: el_last = %p, el_iter = %p", el_last, el_iter));
 
-  for (; el_iter != el_last; ++el_iter)
-    {
-      if (*el_iter == referant)
-	{
-	  if (s->is_weak) {
-	    if (!spell_in_progress) {
-	      IF_SPELL_DEBUG(_warn("Removing ST(%p) magic", referant));
-	      _dispel_magic(s,referant);
-	    } else {
-	      IF_SPELL_DEBUG(_warn("Not removing ST(%p) magic (spell in progress)", referant));
-
-	    }
-	  } else {
-	    IF_SPELL_DEBUG(_warn("Not removing ST(%p) magic from Muggle", referant));
-	    SvREFCNT_dec(referant);
-	  }
-	  *el_iter = 0;
-	  --s->elems;
-	  return 1;
+  for (; el_iter != el_last; ++el_iter) {
+    if (*el_iter == referant) {
+      if (s->is_weak) {
+	if (!spell_in_progress) {
+	  IF_SPELL_DEBUG(_warn("Removing ST(%p) magic", referant));
+	  _dispel_magic(s,referant);
+	} else {
+	  IF_SPELL_DEBUG(_warn("Not removing ST(%p) magic (spell in progress)", referant));
 	}
-      else
-	{
-	  IF_SPELL_DEBUG(_warn("ST(%p) != %p", referant, *el_iter));
-	}
+      } else {
+	IF_SPELL_DEBUG(_warn("Not removing ST(%p) magic from Muggle", referant));
+	SvREFCNT_dec(referant);
+      }
+      *el_iter = 0;
+      --s->elems;
+      return 1;
     }
+    else {
+      IF_SPELL_DEBUG(_warn("ST(%p) != %p", referant, *el_iter));
+    }
+  }
+  THR_UNLOCK;
   return 0;
 }
   
@@ -581,35 +611,34 @@ new(pkg, ...)
    PPCODE:
 
    {
-	   SV* self;
-	   ISET* s;
-	   I32 item;
-	   SV* isv;
+     SV* self;
+     ISET* s;
+     I32 item;
+     SV* isv;
 	
-	   New(0, s, 1, ISET);
-	   s->elems = 0;
-	   s->bucket = 0;
-	   s->buckets = 0;
-	   s->flat = 0;
-	   s->is_weak = 0;
+     New(0, s, 1, ISET);
+     s->elems = 0;
+     s->buckets = 0;
+     s->bucket = NULL;
+     s->flat = Nullhv;
+     s->is_weak = Nullsv;
 
-	   isv = newSViv( PTR2IV(s) );
-	   sv_2mortal(isv);
+     isv = newSViv( PTR2IV(s) );
+     sv_2mortal(isv);
 
-	   self = newRV_inc(isv);
-	   sv_2mortal(self);
+     self = newRV_inc(isv);
+     sv_2mortal(self);
 
-	   sv_bless(self, gv_stashsv(pkg, FALSE));
+     sv_bless(self, gv_stashsv(pkg, FALSE));
 
-	   for (item = 1; item < items; ++item)
-	   {
-		   ISET_INSERT(s, ST(item));
-	   }
+     for (item = 1; item < items; ++item) {
+       ISET_INSERT(s, ST(item));
+     }
 
-      IF_DEBUG(_warn("set!"));
+     IF_DEBUG(_warn("set!"));
 
-      PUSHs(self);
-      XSRETURN(1);
+     PUSHs(self);
+     XSRETURN(1);
    }
 
 void
@@ -658,16 +687,13 @@ is_null(self)
 
    CODE:
    ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
-
    if (s->elems)
      XSRETURN_UNDEF;
-
    if (s->flat) {
      if (HvKEYS(s->flat)) {
        XSRETURN_UNDEF;
      }
    }
-
    RETVAL = 1;
 
    OUTPUT: RETVAL
@@ -678,9 +704,7 @@ size(self)
 
    CODE:
    ISET* s = INT2PTR(ISET*, SvIV(SvRV(self)));
-
    RETVAL = s->elems + (s->flat ? HvKEYS(s->flat) : 0);
-               
 
    OUTPUT: RETVAL
 
@@ -689,8 +713,7 @@ rc(self)
    SV* self;
 
    CODE:
-
-      RETVAL = SvREFCNT(self);
+   RETVAL = SvREFCNT(self);
 
    OUTPUT: RETVAL
 
@@ -1127,7 +1150,7 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
 	   s->elems = 0;
 	   s->bucket = 0;
 	   s->buckets = 0;
-	   s->flat = 0;
+	   s->flat = NULL;
 	   s->is_weak = 0;
 
 	   if (!SvROK(obj)) {
@@ -1155,3 +1178,32 @@ _STORABLE_thaw(obj, cloning, serialized, ...)
       PUSHs(obj);
       XSRETURN(1);
    }
+
+BOOT:
+{
+#ifdef USE_ITHREADS
+  MY_CXT_INIT;
+  MY_CXT.s  = NULL;
+  MUTEX_INIT(&iset_mutex);
+#endif
+}
+
+#ifdef USE_ITHREADS
+
+void
+CLONE(...)
+PROTOTYPE: DISABLE
+PREINIT:
+  ISET *old_s;
+PPCODE:
+ {
+  dMY_CXT;
+  old_s = MY_CXT.s;
+ }
+ {
+  MY_CXT_CLONE;
+  MY_CXT.s = old_s;
+ }
+ XSRETURN(0);
+
+#endif
