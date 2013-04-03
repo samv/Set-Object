@@ -10,15 +10,27 @@ unless ($] >= 5.006001) {
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
-  'NAME'	=> 'Set::Object',
-  'VERSION_FROM' => 'lib/Set/Object.pm', # finds $VERSION
+  'NAME'	 => 'Set::Object',
+  'VERSION_FROM' => 'lib/Set/Object.pm',
   'AUTHOR'    => 'Jean-Louis Leroy and Sam Vilain',
   'LICENSE'   => 'Artistic',
   'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
   'PREREQ_PM' => {
     'Scalar::Util'    => 0,
-    'Test::LeakTrace' => 0,
     'Test::More'      => 0
   },
+  "SIGN" => 1,
+  ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
+   ('META_MERGE'  =>
+    {
+      recommends => {
+       'Test::LeakTrace' => 0,
+      },
+      resources => {
+	license     => 'http://dev.perl.org/licenses/',
+	repository  => 'git://github.com/rurban/Set-Object.git',
+      }
+    }) : ()
+  ),
   test => { TESTS => join(' ', glob('t/*/*.t')) },
 );

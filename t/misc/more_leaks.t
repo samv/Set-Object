@@ -2,7 +2,14 @@ use strict;
 use warnings;
 use Config;
 use Test::More;
-use Test::LeakTrace;
+
+BEGIN {
+    eval 'use Test::LeakTrace';
+    if ($@) {
+	plan 'skip_all' => 'Test::LeakTrace missing';
+	exit(0);
+    }
+}
 use Set::Object;
 
 {
