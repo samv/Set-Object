@@ -10,7 +10,8 @@
 =item *
 
 Fixes for 5.16 and newer - RT#83426
-Sort by member names, not the refs
+Sort by member names, not the refs.
+Fix wrong weak test with globals. Changed to lexicals and use strict/warnings.
 
 =item *
 
