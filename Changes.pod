@@ -10,11 +10,16 @@
 =item *
 
 Fixes for 5.16 and newer - RT#83426
+Sort by member names, not the refs
+
+=item *
+
+Fix t/misc/segfault.t, check SvMAGICAL before doing mg_find
 
 =item *
 
 Fixed wrong C format types in warnings and SET_OBJECT_MAGIC_backref.
-Added PREREQ_PMs
+Added PREREQ_PMs, make Test::LeakTrace an optional dependency.
 
 =back
 

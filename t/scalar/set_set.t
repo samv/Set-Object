@@ -1,14 +1,12 @@
+use Test::More tests => 2;
 use Set::Object;
-
-print "1..2\n";
 
 my $s = Set::Object->new("a");
 my $t = Set::Object->new("b");
 
 $s->insert($t);
 
-print "not " unless $s eq "Set::Object(Set::Object(b) a)";
-print "ok 1\n";
+is($s, "Set::Object(Set::Object(b) a)");
 
 $t->insert($s);
 
@@ -43,6 +41,6 @@ $t->delete($s);
 #print "not " unless $s == "(a (b) (c ...))";
 #print "ok 7\n";
 #
-print "not " unless $t eq "Set::Object(b)";
-print "ok 2\n";
+
+is($t, "Set::Object(b)");
 
