@@ -506,9 +506,9 @@ int
 iset_remove_one(ISET* s, SV* el, int spell_in_progress)
 {
   SV *referant;
-      I32 hash, index;
-      SV **el_iter, **el_last, **el_out_iter;
-      BUCKET* bucket;
+  I32 hash, index;
+  SV **el_iter, **el_last, **el_out_iter;
+  BUCKET* bucket;
 
   IF_DEBUG(_warn("removing scalar %p from set %p", el, s));
 
@@ -518,7 +518,7 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
 
   if (SvOK(el) && !SvROK(el)) {
     IF_DEBUG(_warn("scalar is not a ref (flags = 0x%x)", SvFLAGS(el)));
-    if (s->flat) {
+    if (s->flat && s->elems) {
       IF_DEBUG(_warn("calling remove_scalar for %p", el));
       if (iset_remove_scalar(s, el))
 	return 1;
@@ -627,10 +627,9 @@ insert(self, ...)
 	  _warn("INSERTING SET UP OWN ARSE");
 	}
 	if ISET_INSERT(s, ST(item))
-			inserted++;
-		  IF_DEBUG(_warn("inserting %p %p size = %d", ST(item), SvRV(ST(item)), s->elems));
+	inserted++;
+	IF_DEBUG(_warn("inserting %p %p size = %d", ST(item), SvRV(ST(item)), s->elems));
       }
-
 
       XSRETURN_IV(inserted);
   
@@ -649,10 +648,8 @@ remove(self, ...)
       for (item = 1; item < items; ++item)
       {
          SV* el = ST(item);
-
 	 removed += iset_remove_one(s, el, 0);
       }
-remove_out:
       XSRETURN_IV(removed);
 
 int
