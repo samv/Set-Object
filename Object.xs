@@ -332,7 +332,10 @@ void iset_clear(ISET* s)
 
 MAGIC*
 _detect_magic(SV* sv) {
+  if (SvMAGICAL(sv))
     return mg_find(sv, SET_OBJECT_MAGIC_backref);
+  else
+    return NULL;
 }
 
 void
