@@ -3,6 +3,21 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
+=head1 1.30, 2013-04-03 rurban (new maintainer)
+
+=over
+
+=item *
+
+Fixes for 5.16 and newer - RT#83426
+
+=item *
+
+Fixed wrong C format types in warnings and SET_OBJECT_MAGIC_backref.
+Added PREREQ_PMs
+
+=back
+
 =head1 1.29, 13 Feb 2013
 
 =over

@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
 #if (PERL_VERSION > 7) || ( (PERL_VERSION == 7)&&( PERL_SUBVERSION > 2))
-#define SET_OBJECT_MAGIC_backref (int)0x9f
+#define SET_OBJECT_MAGIC_backref (int)((char)0x9f)
 #else
 #define SET_OBJECT_MAGIC_backref '~'
 #endif
