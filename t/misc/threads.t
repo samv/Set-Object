@@ -1,9 +1,9 @@
 use strict;
-require Test::More;
+use Test::More;
 BEGIN {
     eval 'use threads';
     if ($@) {
-	Test::More->import( 'skip_all' => 'threads.pm failed to load' );
+	plan 'skip_all' => 'threads.pm failed to load';
 	exit(0);
     }
 }
