@@ -475,17 +475,18 @@ On my computer the results are:
 
 =head1 THREAD SAFETY
 
-This module has none.
+This module is not thread-safe.
 
 =head1 AUTHOR
 
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
-Set::Scalar compatibility, XS debugging, weak references support and
-general maintainership courtesy of Sam Vilain, <samv@cpan.org>.
-Maximum respect to those who send me test scripts, enhancements, etc
-as patches against my git tree, browsable at
-L<http://utsl.gen.nz/gitweb/?p=Set-Object>.
+Set::Scalar compatibility, XS debugging, weak references support
+courtesy of Sam Vilain, <samv@cpan.org>.
+
+New maintainer is Reini Urban <rurban@cpan.org>.
+Patches against L<https://github.com/rurban/Set-Object/> please.
+Tickets at RT L<https://rt.cpan.org/Public/Dist/Display.html?Name=Set-Object>
 
 =head1 LICENCE
 
@@ -497,6 +498,8 @@ Portions Copyright (c) 2003 - 2005, Sam Vilain.  Same license.
 
 Portions Copyright (c) 2006, 2007, Catalyst IT (NZ) Limited.  Same
 license.
+
+Portions Copyright (c) 2013, cPanel.  Same license.
 
 =head1 SEE ALSO
 
