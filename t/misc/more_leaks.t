@@ -14,6 +14,7 @@ BEGIN {
   if ($Config{useithreads}) {
     plan 'skip_all' => 'with threads';
   }
+}
 
 use Set::Object;
 

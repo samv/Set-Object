@@ -132,7 +132,6 @@ int iset_insert_scalar(ISET* s, SV* sv)
   STRLEN len;
   char* key = 0;
 
-  THR_LOCK;
   if (!s->flat) {
     IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): creating scalar hash", s));
     s->flat = newHV();
@@ -144,19 +143,19 @@ int iset_insert_scalar(ISET* s, SV* sv)
   key = SvPV(sv, len);
   IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): sv (%p, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
 
+  THR_LOCK;
   if (!hv_exists(s->flat, key, len)) {
     if (!hv_store(s->flat, key, len, &PL_sv_undef, 0)) {
+      THR_UNLOCK;
       _warn("hv store failed[?] set=%p", s);
-    }
-
+    } else
+      THR_UNLOCK;
     IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): inserted OK!", s));
-    THR_UNLOCK;
     return 1;
   }
   else {
-    
-    IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): already there!", s));
     THR_UNLOCK;
+    IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): already there!", s));
     return 0;
   }
 }
@@ -166,24 +165,23 @@ int iset_remove_scalar(ISET* s, SV* sv)
   STRLEN len;
   char* key = 0;
 
-  THR_LOCK;
   if (!s->flat || !HvKEYS(s->flat)) {
     IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): shortcut for %p(str = '%s') (no hash)", s, sv, SvPV_nolen(sv)));
-    THR_UNLOCK;
     return 0;
   }
 
   IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): sv (%p, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
   key = SvPV(sv, len);
 
+  THR_LOCK;
   if ( hv_delete(s->flat, key, len, 0) ) {
-    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): deleted key", s));
     THR_UNLOCK;
+    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): deleted key", s));
     return 1;
 
   } else {
-    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): key not absent", s));
     THR_UNLOCK;
+    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): key not absent", s));
     return 0;
   }
   
@@ -210,11 +208,8 @@ int iset_insert_one(ISET* s, SV* rv)
 	int ins = 0;
 
 	if (!SvROK(rv))
-	{
 	    Perl_croak(aTHX_ "Tried to insert a non-reference into a Set::Object");
-	};
 
-	THR_LOCK;
 	el = SvRV(rv);
 
 	if (!s->buckets)
@@ -303,8 +298,6 @@ int iset_insert_one(ISET* s, SV* rv)
 			}
 		}
 	}
-
-	THR_UNLOCK;
 	return ins;
 }
 
@@ -315,7 +308,6 @@ void iset_clear(ISET* s)
 	BUCKET* bucket_iter = s->bucket;
 	BUCKET* bucket_last = bucket_iter + s->buckets;
 
-	THR_LOCK;
 	for (; bucket_iter != bucket_last; ++bucket_iter)
 	{
 		SV **el_iter, **el_last;
@@ -356,7 +348,6 @@ void iset_clear(ISET* s)
 	s->bucket = 0;
 	s->buckets = 0;
 	s->elems = 0;
-	THR_UNLOCK;
 }
 
 
@@ -408,10 +399,10 @@ _dispel_magic(ISET* s, SV* sv) {
 void
 _fiddle_strength(ISET* s, const int strong) {
 
-      THR_LOCK;
       BUCKET* bucket_iter = s->bucket;
       BUCKET* bucket_last = bucket_iter + s->buckets;
 
+      THR_LOCK;
       for (; bucket_iter != bucket_last; ++bucket_iter)
       {
          SV **el_iter, **el_last;
@@ -425,17 +416,21 @@ _fiddle_strength(ISET* s, const int strong) {
          for (; el_iter != el_last; ++el_iter)
             if (*el_iter) {
 	      if (strong) {
+		THR_UNLOCK;
 		_dispel_magic(s, *el_iter);
 		SvREFCNT_inc(*el_iter);
 		IF_DEBUG(_warn("bumped RC of %p to %d", *el_iter,
 			       SvREFCNT(*el_iter)));
+		THR_LOCK;
 	      }
 	      else {
+		THR_UNLOCK;
 		if ( SvREFCNT(*el_iter) > 1 )
 		  _cast_magic(s, *el_iter);
 		SvREFCNT_dec(*el_iter);
 		IF_DEBUG(_warn("reduced RC of %p to %d", *el_iter,
 			       SvREFCNT(*el_iter)));
+		THR_LOCK;
 	      }
 	    }
       }
@@ -558,7 +553,6 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
     return 0;
   }
 
-  THR_LOCK;
   referant = (spell_in_progress ? el : SvRV(el));
   hash = ISET_HASH(referant);
   index = hash & (s->buckets - 1);
@@ -575,6 +569,7 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
   el_last = el_iter + bucket->n;
   IF_DEBUG(_warn("remove: el_last = %p, el_iter = %p", el_last, el_iter));
 
+  THR_LOCK;
   for (; el_iter != el_last; ++el_iter) {
     if (*el_iter == referant) {
       if (s->is_weak) {
@@ -590,6 +585,7 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
       }
       *el_iter = 0;
       --s->elems;
+      THR_UNLOCK;
       return 1;
     }
     else {
