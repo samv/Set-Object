@@ -19,10 +19,10 @@ extern "C" {
 
 #ifdef SET_DEBUG
 /* for debugging object-related functions */
-#define IF_DEBUG(e) e
+#define IF_DEBUG(e)
 /* for debugging scalar-related functions */
 #define IF_REMOVE_DEBUG(e) e
-#define IF_INSERT_DEBUG(e) e
+#define IF_INSERT_DEBUG(e)
 /* for debugging weakref-related functions */
 #define IF_SPELL_DEBUG(e) e
 #else
@@ -148,8 +148,9 @@ int iset_insert_scalar(ISET* s, SV* sv)
     if (!hv_store(s->flat, key, len, &PL_sv_undef, 0)) {
       THR_UNLOCK;
       _warn("hv store failed[?] set=%p", s);
-    } else
+    } else {
       THR_UNLOCK;
+    }
     IF_INSERT_DEBUG(_warn("iset_insert_scalar(%p): inserted OK!", s));
     return 1;
   }
@@ -166,22 +167,30 @@ int iset_remove_scalar(ISET* s, SV* sv)
   char* key = 0;
 
   if (!s->flat || !HvKEYS(s->flat)) {
-    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): shortcut for %p(str = '%s') (no hash)", s, sv, SvPV_nolen(sv)));
+    //IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p):'%s' (no hash)", s, SvPV_nolen(sv)));
     return 0;
   }
 
-  IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): sv (%p, rc = %d, str= '%s')!", s, sv, SvREFCNT(sv), SvPV_nolen(sv)));
+  IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): sv (%p, rc=%d, str='%s')"
+#ifdef USE_ITHREADS
+			" interp=%p"
+#endif
+			, s, sv, SvREFCNT(sv), SvPV_nolen(sv)
+#ifdef USE_ITHREADS
+			, PERL_GET_CONTEXT
+#endif
+			));
   key = SvPV(sv, len);
 
   THR_LOCK;
   if ( hv_delete(s->flat, key, len, 0) ) {
     THR_UNLOCK;
-    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): deleted key", s));
+    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): deleted key '%s'", s, key));
     return 1;
 
   } else {
     THR_UNLOCK;
-    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): key not absent", s));
+    IF_REMOVE_DEBUG(_warn("iset_remove_scalar(%p): key '%s' not found", s, key));
     return 0;
   }
   
@@ -189,7 +198,7 @@ int iset_remove_scalar(ISET* s, SV* sv)
 
 bool iset_includes_scalar(ISET* s, SV* sv)
 {
-  if (s->flat) {
+  if (s->flat && HvKEYS(s->flat)) {
     STRLEN len;
     char* key = SvPV(sv, len);
     return hv_exists(s->flat, key, len);
@@ -545,7 +554,7 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
 
   if (SvOK(el) && !SvROK(el)) {
     IF_DEBUG(_warn("scalar is not a ref (flags = 0x%x)", SvFLAGS(el)));
-    if (s->flat) {
+    if (s->flat && HvKEYS(s->flat)) {
       IF_DEBUG(_warn("calling remove_scalar for %p", el));
       if (iset_remove_scalar(s, el))
 	return 1;
@@ -573,14 +582,18 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
   for (; el_iter != el_last; ++el_iter) {
     if (*el_iter == referant) {
       if (s->is_weak) {
+	THR_UNLOCK;
 	if (!spell_in_progress) {
 	  IF_SPELL_DEBUG(_warn("Removing ST(%p) magic", referant));
 	  _dispel_magic(s,referant);
 	} else {
 	  IF_SPELL_DEBUG(_warn("Not removing ST(%p) magic (spell in progress)", referant));
 	}
+	THR_LOCK;
       } else {
+	THR_UNLOCK;
 	IF_SPELL_DEBUG(_warn("Not removing ST(%p) magic from Muggle", referant));
+	THR_LOCK;
 	SvREFCNT_dec(referant);
       }
       *el_iter = 0;
@@ -589,7 +602,9 @@ iset_remove_one(ISET* s, SV* el, int spell_in_progress)
       return 1;
     }
     else {
+      THR_UNLOCK;
       IF_SPELL_DEBUG(_warn("ST(%p) != %p", referant, *el_iter));
+      THR_LOCK;
     }
   }
   THR_UNLOCK;
