@@ -4,11 +4,13 @@ use Config;
 use Test::More;
 
 BEGIN {
-    eval 'use Test::LeakTrace';
+  for (qw(Test::LeakTrace Moose)) {
+    eval "use $_";
     if ($@) {
-	plan 'skip_all' => 'Test::LeakTrace missing';
+	plan 'skip_all' => "$_ missing";
 	exit(0);
     }
+  }
 }
 use Set::Object;
 
@@ -22,8 +24,7 @@ use Set::Object;
     no strict;
     note join ' ', map {$Config{$_}} qw(osname archname);
     note 'perl version ', $];
-    note $_,'-',${"${_}::VERSION"} for qw{Moose Set::Object
-Test::LeakTrace};
+    note $_,'-',${"${_}::VERSION"} for qw{Moose Set::Object Test::LeakTrace};
 }
 
 my $set;

@@ -17,14 +17,16 @@ WriteMakefile(
   'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
   'PREREQ_PM' => {
     'Scalar::Util'    => 0,
-    'Test::More'      => 0
+    'Test::More'      => 0,
   },
   "SIGN" => 1,
   ($ExtUtils::MakeMaker::VERSION gt '6.46' ?
    ('META_MERGE'  =>
     {
       recommends => {
-       'Test::LeakTrace' => 0,
+	# deps of t/misc/more_leaks.t
+	'Test::LeakTrace' => 0,
+	'Moose'           => 0,
       },
       resources => {
 	license     => 'http://dev.perl.org/licenses/',

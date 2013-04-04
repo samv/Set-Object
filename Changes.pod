@@ -3,7 +3,7 @@
 
 =head1 REVISION HISTORY FOR Set::Object
 
-=head1 1.30, 2013-04-03 rurban (new maintainer)
+=head1 1.30, 2013-04-04 rurban (new maintainer)
 
 =over
 
@@ -15,12 +15,19 @@ Fix wrong weak test with globals. Changed to lexicals and use strict/warnings.
 
 =item *
 
-Fix t/misc/segfault.t, check SvMAGICAL before doing mg_find
+Fix F<t/misc/segfault.t>, check SvMAGICAL before doing C<mg_find>
 
 =item *
 
-Fixed wrong C format types in warnings and SET_OBJECT_MAGIC_backref.
-Added PREREQ_PMs, make Test::LeakTrace an optional dependency.
+Fixed wrong C format types in warnings and C<SET_OBJECT_MAGIC_backref>.
+Added PREREQ_PMs, make L<Test::LeakTrace> and L<Moose> an optional dependency
+for F<t/misc/more_leaks.t>
+
+=item *
+
+Improve thread-safety (forbid concurrent writes), but still dealing with 
+Attempt to free non-existent shared string and 
+Unbalanced string table refcount: (1) for "8" during global destruction.
 
 =back
 
