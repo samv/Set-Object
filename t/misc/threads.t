@@ -27,15 +27,16 @@ $t1->join;
 $t2->join;
 threads->yield;
 
-#TODO: {
-#  local $TODO = "Set::Object is not yet threadable";
 is $warnings, undef;
-#}
 
 while ($t1->is_running && $t2->is_running) {
   sleep(0.1);
 }
-is (scalar($sh->members), 5);
+
+TODO: {
+  local $TODO = "Set::Object has still refcount issues with threads RT#22760";
+  is (scalar($sh->members), 5);
+}
 
 sub f1{
   foreach my $i (1..100){
