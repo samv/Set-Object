@@ -28,6 +28,7 @@ for F<t/misc/more_leaks.t>
 Improve thread-safety (forbid concurrent writes), but still dealing with 
 Attempt to free non-existent shared string and 
 Unbalanced string table refcount: (1) for "8" during global destruction.
+- RT #22760
 
 =back
 
