@@ -30,6 +30,10 @@ Attempt to free non-existent shared string and
 Unbalanced string table refcount: (1) for "8" during global destruction.
 - RT #22760
 
+=item *
+
+Add missing typemap entry const char * for 5.6
+
 =back
 
 =head1 1.29, 13 Feb 2013
