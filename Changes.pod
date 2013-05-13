@@ -1,7 +1,21 @@
 
 =encoding utf8
 
-=head1 REVISION HISTORY FOR Set::Object
+=
+
+=head1 NAME
+
+Set::Object - REVISION HISTORY
+
+=head1 1.31, 2013-05-13 rurban
+
+=over
+
+=item *
+
+Changes.pod patch by Gregor Hermann, debian perl group - RT#85244
+
+=back
 
 =head1 1.30, 2013-04-04 rurban (new maintainer)
 
@@ -446,7 +460,7 @@ for L<Container::Object> (C<ish_int>).
 
 Some of these functions were in the XS code anyway, and they are
 extremely small, so I didn't see a problem with duplicating them -
-saves an extra dependancy.  Plus, Graham Barr won't let me put
+saves an extra dependency.  Plus, Graham Barr won't let me put
 C<ish_int> or C<is_key> in his module.
 
 Knowing that they are available will also assist in fixing some longer
