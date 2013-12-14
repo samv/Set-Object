@@ -1,11 +1,19 @@
 
 =encoding utf8
 
-=
-
 =head1 NAME
 
-Set::Object - REVISION HISTORY
+REVISION HISTORY - Set::Object
+
+=head1 1.32, 2013-05-15 rurban (released 2013-12-13)
+
+=over
+
+=item *
+
+Reverts Changes.pod patch RT#85244 as it conflicts with the Set::Object pod on metacpan
+
+=back
 
 =head1 1.31, 2013-05-13 rurban
 
