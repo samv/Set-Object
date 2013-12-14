@@ -5,13 +5,29 @@
 
 REVISION HISTORY - Set::Object
 
+=head1 1.33, 2013-12-13
+
+=over
+
+=item *
+
+Fix RT #90070: Improve pod for sorted @$set in list context vs 
+unsorted ->elements (ftobin)
+
+=item *
+
+Fix RT #87658: Typo in pod (dsteinbrunner)
+
+=back
+
 =head1 1.32, 2013-05-15 rurban (released 2013-12-13)
 
 =over
 
 =item *
 
-Reverts Changes.pod patch RT#85244 as it conflicts with the Set::Object pod on metacpan
+Reverts Changes.pod patch RT#85244 as it conflicts with the Set::Object pod on metacpan.
+Also RT #85246
 
 =back
 

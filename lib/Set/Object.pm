@@ -11,7 +11,7 @@ Set::Object - set of objects and strings
   $set->insert(@thingies);
   $set->remove(@thingies);
 
-  @items = @$set;             # or $set->members;
+  @items = @$set;             # or $set->members for the unsorted array
 
   $union = $set1 + $set2;
   $intersection = $set1 * $set2;
@@ -128,6 +128,9 @@ item if the value is found, rather than just a true value.
 
 Return the objects contained in the C<Set::Object> in random (hash)
 order.
+
+Note that the elements of a C<Set::Object> in list context are returned
+sorted - C<@$set> - so using the C<members> method is faster.
 
 =head2 size
 
@@ -523,7 +526,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set weak_set );
-$VERSION = '1.32';
+$VERSION = '1.33';
 
 bootstrap Set::Object $VERSION;
 
@@ -759,6 +762,7 @@ sub tie_array_pkg { "Set::Object::TieArray" };
       Scalar::Util::weaken($tie->[1]);
       return $tie;
   }
+  # note the sort here
   sub promote {
       my $self = shift;
       @{$self->[0]} = sort $self->[1]->members;
