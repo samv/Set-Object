@@ -4,7 +4,7 @@ Set::Object - set of objects and strings
 
 =head1 SYNOPSIS
 
-  use Set::Object;
+  use Set::Object qw(set);
 
   my $set = set();            # or Set::Object->new()
 
