@@ -5,6 +5,16 @@
 
 REVISION HISTORY - Set::Object
 
+=head1 1.34, 2013-12-25
+
+=over
+
+=item *
+
+Make synopsis examples work (tadzik)
+
+=back
+
 =head1 1.33, 2013-12-13
 
 =over
