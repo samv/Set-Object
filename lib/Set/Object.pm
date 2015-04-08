@@ -493,7 +493,9 @@ Copyright (c) 1998-1999, Jean-Louis Leroy. All Rights Reserved.
 This module is free software. It may be used, redistributed
 and/or modified under the terms of the Perl Artistic License
 
-Portions Copyright (c) 2003 - 2005, Sam Vilain.  Same license.
+Portions Copyright (c) 2003 - 2005, Sam Vilain.  Contributions available
+under the terms of the Perl Artistic License, either the original, or at
+your option, any later version.
 
 Portions Copyright (c) 2006, 2007, Catalyst IT (NZ) Limited.  Same
 license.
