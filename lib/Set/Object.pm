@@ -130,7 +130,7 @@ Return the objects contained in the C<Set::Object> in random (hash)
 order.
 
 Note that the elements of a C<Set::Object> in list context are returned
-sorted - C<@$set> - so using the C<members> method is faster.
+sorted - C<@$set> - so using the C<members> method is much faster.
 
 =head2 size
 
@@ -503,12 +503,11 @@ Portions Copyright (c) 2006, 2007, Catalyst IT (NZ) Limited.  This
 module is free software. It may be used, redistributed and/or modified
 under the terms of the Perl Artistic License
 
-
 Portions Copyright (c) 2013, cPanel.  Same license.
 
 =head1 SEE ALSO
 
-perl(1), perltie(1), L<Set::Scalar>, overload.pm
+perl(1), perltie(1), L<Set::Scalar>, L<overload>
 
 =cut
 
@@ -529,7 +528,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set weak_set );
-$VERSION = '1.34';
+$VERSION = '1.35';
 
 bootstrap Set::Object $VERSION;
 
