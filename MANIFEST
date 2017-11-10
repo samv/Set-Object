@@ -30,6 +30,7 @@ t/object/flags.t
 t/object/includes.t
 t/object/insert.t
 t/object/intersection.t
+t/object/magic.t
 t/object/members.t
 t/object/Person.pm
 t/object/properties.t
