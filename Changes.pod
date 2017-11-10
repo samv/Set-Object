@@ -5,6 +5,16 @@
 
 REVISION HISTORY - Set::Object
 
+=head1 1.37, 2017-11-??
+
+=over
+
+=item *
+
+Test fixes for -Ddefault_inc_excludes_dot, RT #120540
+
+=back
+
 =head1 1.36, 2017-11-10
 
 =over
