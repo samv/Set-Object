@@ -13,6 +13,14 @@ REVISION HISTORY - Set::Object
 
 Test fixes for -Ddefault_inc_excludes_dot, RT #120540
 
+=item *
+
+Skip failing threads test <= 5.10.0
+
+=item *
+
+Add CI hooks
+
 =back
 
 =head1 1.36, 2017-11-10

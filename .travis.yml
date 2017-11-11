@@ -17,10 +17,11 @@ perl:
   - "dev"
 #  - "cperl-5.26.1"
 sudo: false
-#before_install:
-#  - perl -V
-#  - ulimit -s
+before_install:
+  - perl -V
+  - eval $(curl https://travis-perl.github.io/init) --perl
 install:
+  - cpan-install Test::LeakTrace Moose Test::CheckManifest
   - perl Makefile.PL
   - make
 script:

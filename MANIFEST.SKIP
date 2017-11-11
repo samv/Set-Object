@@ -7,3 +7,5 @@ MANIFEST.SKIP
 ^pm_to_blib$
 ^[^/]*\.tar(.\w+)?$
 Object.(c|o|bs|exe)
+.travis.yml
+appveyor.yml
