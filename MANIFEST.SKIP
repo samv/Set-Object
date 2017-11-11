@@ -9,3 +9,4 @@ MANIFEST.SKIP
 Object.(c|o|bs|exe)
 .travis.yml
 appveyor.yml
+cover_db

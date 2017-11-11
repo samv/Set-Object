@@ -5,7 +5,17 @@
 
 REVISION HISTORY - Set::Object
 
-=head1 1.37, 2017-11-??
+=head1 1.38, 2017-11-11
+
+=over
+
+=item *
+
+Add test_cover and release targets
+
+=back
+
+=head1 1.37, 2017-11-11
 
 =over
 

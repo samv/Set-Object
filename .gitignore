@@ -1,6 +1,7 @@
 /META.yml
 /META.yml.bak
 /MYMETA.*
+/cover_db
 Makefile
 Makefile.old
 Makefile.bak
