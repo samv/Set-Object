@@ -1,5 +1,5 @@
 language: perl
-# ony old precise has archived -thr builds, but even that fails to install
+# only old precise has archived -thr builds, but even that fails to install
 perl:
   - "5.8"
   - "5.10"
@@ -14,6 +14,8 @@ perl:
   - "5.22"
   - "5.24"
   - "5.26"
+  - "5.28"
+  - "5.30"
   - "dev"
 #  - "cperl-5.26.1"
 sudo: false
@@ -21,7 +23,7 @@ before_install:
   - perl -V
   - eval $(curl https://travis-perl.github.io/init) --perl
 install:
-  - cpan-install Test::LeakTrace Moose Test::CheckManifest
+  - cpan-install Test::LeakTrace Moose Test::CheckManifest Test::CPAN::Meta Test::Pod
   - perl Makefile.PL
   - make
 script:
