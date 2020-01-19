@@ -1,4 +1,5 @@
 # RT 131354, perl5.28 regression forgetting GMG
+use 5.008;
 use Set::Object qw/ set /;
 use Test::More tests => 2;
 
