@@ -12,7 +12,7 @@ unless ($] >= 5.008) {
 WriteMakefile(
   'NAME'	 => 'Set::Object',
   'VERSION_FROM' => 'lib/Set/Object.pm',
-  'AUTHOR'    => 'Jean-Louis Leroy and Sam Vilain',
+  'AUTHOR'    => 'Jean-Louis Leroy, Sam Vilain and Reini Urban',
   'LICENSE'   => 'Artistic_2',
   'ABSTRACT'  => "Unordered collections (sets) of Perl Objects",
   'PREREQ_PM' => {
