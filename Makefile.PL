@@ -28,7 +28,7 @@ WriteMakefile(
       resources => {
         repository => {
           type => 'git',
-          url => 'git@github.com:rurban/Set-Object.git',
+          url => 'git://github.com/rurban/Set-Object.git',
           web => 'https://github.com/rurban/Set-Object',
         },
         license => [ 'http://dev.perl.org/licenses/' ],
