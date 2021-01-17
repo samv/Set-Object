@@ -10,3 +10,5 @@ Object.(c|o|bs|exe)
 .travis.yml
 appveyor.yml
 cover_db
+.gdbinit
+Set-Object-.*.tar.gz
