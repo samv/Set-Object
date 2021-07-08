@@ -29,14 +29,14 @@ use Data::Dumper;
 my $returned = thaw($stored);
 #print "no segfault yet!\n";
 #diag(Dumper($returned, $set));
-is_deeply([ sort { ref($a) cmp ref($b) } $returned->members ],
-	  [ sort { ref($a) cmp ref($b) } $set->members ],
+is_deeply([ sort $returned->members ],
+	  [ sort $set->members ],
 	  "Set::Object serialises via Storable!");
 isnt($$returned, $$set, "thaw returned a new Set::Object");
 
 my $spawned = dclone($set);
-is_deeply([ sort { ref($a) cmp ref($b) } $spawned->members ],
-	  [ sort { ref($a) cmp ref($b) } $set->members ],
+is_deeply([ sort $spawned->members ],
+	  [ sort $set->members ],
 	  "Set::Object dclones via Storable!");
 isnt($$spawned, $$set, "dclone returned a new Set::Object");
 
