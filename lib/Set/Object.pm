@@ -1,18 +1,17 @@
-
 =head1 NAME
 
 Set::Object - set of objects and strings
 
 =head1 SYNOPSIS
 
-  use Set::Object;
+  use Set::Object qw(set);
 
   my $set = set();            # or Set::Object->new()
 
   $set->insert(@thingies);
   $set->remove(@thingies);
 
-  @items = @$set;             # or $set->members;
+  @items = @$set;             # or $set->members for the unsorted array
 
   $union = $set1 + $set2;
   $intersection = $set1 * $set2;
@@ -97,7 +96,7 @@ to explicitly import this method.
 Add items to the C<Set::Object>.
 
 Adding the same object several times is not an error, but any
-C<Set::Object> will contain at most one occurence of the same object.
+C<Set::Object> will contain at most one occurrence of the same object.
 
 Returns the number of elements that were actually added.  As of
 Set::Object 1.23, C<undef> will not insert.
@@ -129,6 +128,9 @@ item if the value is found, rather than just a true value.
 
 Return the objects contained in the C<Set::Object> in random (hash)
 order.
+
+Note that the elements of a C<Set::Object> in list context are returned
+sorted - C<@$set> - so using the C<members> method is much faster.
 
 =head2 size
 
@@ -473,19 +475,33 @@ On my computer the results are:
      H lookup:  7 secs ( 7.14 usr  0.00 sys =  7.14 cpu)
      S lookup:  6 secs ( 5.94 usr  0.00 sys =  5.94 cpu)
 
+This benchmark compares the unsorted members method, against the sorted @$ list context.
+
+   perl -MBenchmark -mList::Util -mSet::Object -e'
+   $set = Set::Object::set (List::Util::shuffle(1..1000));
+   Benchmark::timethese(-3, {
+      "Slow \@\$set       " => sub { $i++ for @$set; },
+      "Fast set->members" => sub { $i++ for $set->members(); },
+      });'
+
+    Benchmark: running Fast set->members, Slow @$set        for at least 3 CPU seconds...
+    Fast set->members:  4 wallclock secs ( 3.17 usr +  0.00 sys =  3.17 CPU) @ 9104.42/s (n=28861)
+    Slow @$set       :  4 wallclock secs ( 3.23 usr +  0.00 sys =  3.23 CPU) @ 1689.16/s (n=5456)
+
 =head1 THREAD SAFETY
 
-This module has none.
+This module is not thread-safe.
 
 =head1 AUTHOR
 
 Original Set::Object module by Jean-Louis Leroy, <jll@skynet.be>
 
-Set::Scalar compatibility, XS debugging, weak references support and
-general maintainership courtesy of Sam Vilain, <samv@cpan.org>.
-Maximum respect to those who send me test scripts, enhancements, etc
-as patches against my git tree, browsable at
-L<http://utsl.gen.nz/gitweb/?p=Set-Object>.
+Set::Scalar compatibility, XS debugging, weak references support
+courtesy of Sam Vilain, <samv@cpan.org>.
+
+New maintainer is Reini Urban <rurban@cpan.org>.
+Patches against L<https://github.com/rurban/Set-Object/> please.
+Tickets at RT L<https://rt.cpan.org/Public/Dist/Display.html?Name=Set-Object>
 
 =head1 LICENCE
 
@@ -500,10 +516,12 @@ Portions Copyright (c) 2006, 2007, Catalyst IT (NZ) Limited.  This
 module is free software. It may be used, redistributed and/or modified
 under the terms of the Perl Artistic License
 
+Portions Copyright (c) 2013, cPanel.  Same license.
+Portions Copyright (c) 2020, Reini Urban.  Same license.
 
 =head1 SEE ALSO
 
-perl(1), perltie(1), L<Set::Scalar>, overload.pm
+perl(1), perltie(1), L<Set::Scalar>, L<overload>
 
 =cut
 
@@ -524,7 +542,7 @@ require AutoLoader;
 
 @EXPORT_OK = qw( ish_int is_int is_string is_double blessed reftype
 		 refaddr is_overloaded is_object is_key set weak_set );
-$VERSION = '1.29';
+$VERSION = '1.42';
 
 bootstrap Set::Object $VERSION;
 
@@ -737,7 +755,7 @@ use overload
    '<='  =>		\&subset,
    '>='  =>		\&superset,
    '%{}'  =>		sub { my $self = shift;
-			      my %h = {};
+			      my %h = ();
 			      tie %h, $self->tie_hash_pkg, [], $self;
 			      \%h },
    '@{}'  =>		sub { my $self = shift;
@@ -760,6 +778,7 @@ sub tie_array_pkg { "Set::Object::TieArray" };
       Scalar::Util::weaken($tie->[1]);
       return $tie;
   }
+  # note the sort here
   sub promote {
       my $self = shift;
       @{$self->[0]} = sort $self->[1]->members;

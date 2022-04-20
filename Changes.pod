@@ -1,7 +1,200 @@
 
 =encoding utf8
 
-=head1 REVISION HISTORY FOR Set::Object
+=head1 NAME
+
+REVISION HISTORY - Set::Object
+
+=head1 1.42, 2022-01-21
+
+=over
+
+=item *
+
+Fix C<%h={}> warning, by Pauwel Coppieters
+
+=item *
+
+add F<examples/slow-sort.pl>. see RT #90070
+
+=back
+
+=head1 1.41, 2021-01-17
+
+=over
+
+=item *
+
+Use meta-spec 2, Moose -> dev.requires not runtime.recommends
+(GH #6, RT #134034) by mohawk
+
+=back
+
+=head1 1.40, 2020-01-19
+
+=over
+
+=item *
+
+Fixed perl5.28 regressions (not cperl), for @$set args to other set functions.
+(RT #131345). Fixed by adding missing SvGETMAGIC expansions to all args.
+
+=item *
+
+Bumped minimal required perl version to 5.8 for arrayref @$set behavior.
+
+=item *
+
+Fixed the smokers and some author tests.
+
+=back
+
+=head1 1.39, 2018-01-08
+
+=over
+
+=item *
+
+Skip installing Changes.pod (PR #5, kentfredric)
+
+=back
+
+=head1 1.38, 2017-11-11
+
+=over
+
+=item *
+
+Add test_cover and release targets
+
+=back
+
+=head1 1.37, 2017-11-11
+
+=over
+
+=item *
+
+Test fixes for -Ddefault_inc_excludes_dot, RT #120540
+
+=item *
+
+Skip failing threads test <= 5.10.0
+
+=item *
+
+Add CI hooks
+
+=back
+
+=head1 1.36, 2017-11-10
+
+=over
+
+=item *
+
+Davem fixed get-magic for the new arguments, fixing
+NetHack-Item L<[perl #132152]|https://rt.perl.org/Public/Bug/Display.html?id=132152>.
+See L<[cpan #123582]|https://rt.cpan.org/Ticket/Display.html?id=123582>
+
+=item *
+
+Stabilize F<t/misc/kwalitee.t> test
+
+=back
+
+=head1 1.35, 2015-06-10
+
+=over
+
+=item *
+
+Change to Artistic License 2.0
+
+=item *
+
+Add more misc tests. Add use strict to Set::Object::Weak
+
+=back
+
+=head1 1.34, 2013-12-25
+
+=over
+
+=item *
+
+Make synopsis examples work (tadzik)
+
+=back
+
+=head1 1.33, 2013-12-13
+
+=over
+
+=item *
+
+Fix RT #90070: Improve pod for sorted @$set in list context vs 
+unsorted ->elements (ftobin)
+
+=item *
+
+Fix RT #87658: Typo in pod (dsteinbrunner)
+
+=back
+
+=head1 1.32, 2013-05-15 rurban (released 2013-12-13)
+
+=over
+
+=item *
+
+Reverts Changes.pod patch RT#85244 as it conflicts with the Set::Object pod on metacpan.
+Also RT #85246
+
+=back
+
+=head1 1.31, 2013-05-13 rurban
+
+=over
+
+=item *
+
+Changes.pod patch by Gregor Hermann, debian perl group - RT#85244
+
+=back
+
+=head1 1.30, 2013-04-04 rurban (new maintainer)
+
+=over
+
+=item *
+
+Fixes for 5.16 and newer - RT#83426
+Sort by member names, not the refs.
+Fix wrong weak test with globals. Changed to lexicals and use strict/warnings.
+
+=item *
+
+Fix F<t/misc/segfault.t>, check SvMAGICAL before doing C<mg_find>
+
+=item *
+
+Fixed wrong C format types in warnings and C<SET_OBJECT_MAGIC_backref>.
+Added PREREQ_PMs, make L<Test::LeakTrace> and L<Moose> an optional dependency
+for F<t/misc/more_leaks.t>
+
+=item *
+
+Improve thread-safety (forbid concurrent writes), but still dealing with 
+Attempt to free non-existent shared string and 
+Unbalanced string table refcount: (1) for "8" during global destruction.
+- RT #22760
+
+=item *
+
+Add missing typemap entry const char * for 5.6
+
+=back
 
 =head1 1.29, 13 Feb 2013
 
@@ -413,7 +606,7 @@ for L<Container::Object> (C<ish_int>).
 
 Some of these functions were in the XS code anyway, and they are
 extremely small, so I didn't see a problem with duplicating them -
-saves an extra dependancy.  Plus, Graham Barr won't let me put
+saves an extra dependency.  Plus, Graham Barr won't let me put
 C<ish_int> or C<is_key> in his module.
 
 Knowing that they are available will also assist in fixing some longer
